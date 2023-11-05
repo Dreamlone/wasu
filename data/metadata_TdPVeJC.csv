@@ -1,0 +1,27 @@
+site_id,season_start_month,season_end_month,elevation,latitude,longitude,drainage_area,usgs_id,usgs_name,nrcs_id,nrcs_name,rfc_id,rfc_name,rfc
+hungry_horse_reservoir_inflow,4,7,3040.0,48.35663,-114.03762,1668.0,12362500,S F Flathead River nr Columbia Falls MT,12362500:MT:USGS,Hungry Horse Reservoir Inflow,HHWM8,SF Flathead - Hungry Horse Dam,NWRFC
+snake_r_nr_heise,4,7,5015.0,43.6125,-111.66,5752.0,13037500,Snake River NR Heise ID,13037500:ID:USGS,Snake R nr Heise,HEII1,Snake - Near Heise ,NWRFC
+pueblo_reservoir_inflow,4,7,4740.0,38.27167,-104.71803,4670.0,07099400,Arkansas River above Pueblo CO,07099400:CO:USGS,Pueblo Reservoir Inflow,PDAC2,Arkansas River Above Pueblo,ARBRFC
+sweetwater_r_nr_alcova,4,7,5890.0,42.48996,-107.13394,2338.0,06639000,"Sweetwater River Near Alcova, WY",06639000:WY:USGS,Sweetwater R nr Alcova,,,
+missouri_r_at_toston,4,7,3906.0,46.14604,-111.42052,14641.0,06054500,Missouri River at Toston MT,06054500:MT:USGS,Missouri R at Toston,TOSM8,Missouri River at Toston,MBRFC
+animas_r_at_durango,4,7,6502.0,37.27917,-107.88034,701.0,09361500,"Animas River at Durango, CO",09361500:CO:USGS,Animas R at Durango,DRGC2,Animas - Durango,CBRFC
+yampa_r_nr_maybell,4,7,5900.0,40.50275,-108.03342,3383.0,09251000,"Yampa River Near Maybell, CO",09251000:CO:USGS,Yampa R nr Maybell,MBLC2,Yampa - Maybell Nr,CBRFC
+libby_reservoir_inflow,4,7,2100.0,48.40079,-115.32072,8999.0,12301933,Kootenai River BL Libby Dam NR Libby MT,12301933:MT:USGS,Libby Reservoir Inflow,LYDM8,Kootenai - Libby Dam,NWRFC
+boise_r_nr_boise,4,7,2827.0,43.52767,-116.05955,2686.0,13202000,Boise River NR Boise ID,13202000:ID:USGS,Boise R nr Boise,LUCI1,Boise - Lucky Peak Dam,NWRFC
+green_r_bl_howard_a_hanson_dam,4,7,990.0,47.28371,-121.79789,221.0,12105900,"Green River Below Howard A Hanson Dam, WA",12105900:WA:USGS,Green R bl Howard A Hanson Dam,HHDW1,Green - Howard Hanson Dam,NWRFC
+taylor_park_reservoir_inflow,4,7,9170.0,38.81833,-106.6092,254.0,09109000,"Taylor River Below Taylor Park Reservoir, CO",09109209:CO:USGS,Taylor Park Reservoir Inflow,TPIC2,Taylor - Taylor Park Reservoir,CBRFC
+dillon_reservoir_inflow,4,7,8760.0,39.62554,-106.06641,334.0,09050700,"Blue River Below Dillon, CO",09050700:CO:USGS,Dillon Reservoir Inflow,DIRC2,Blue - Dillon Reservoir,CBRFC
+ruedi_reservoir_inflow,4,7,7766.0,39.36139,-106.81861,223.0,09080190,"Ruedi Reservoir Near Basalt, CO",09080190:CO:USGS,Ruedi Reservoir Inflow,RURC2,"Frying Pan - Reudi Reservoir, Basalt, Nr",CBRFC
+fontenelle_reservoir_inflow,4,7,6506.0,42.02778,-110.06667,4280.0,09211150,"Fontenelle Reservoir Near Fontenelle, WY",09211150:WY:USGS,Fontenelle Reservoir Inflow,GBRW4,"Green - Fontenelle Reservoir, Fontenelle, Nr",CBRFC
+weber_r_nr_oakley,4,7,6640.0,40.73717,-111.24797,162.0,10128500,"Weber River Near Oakley, UT",10128500:UT:USGS,Weber R nr Oakley,OAWU1,"Weber - Oakley, Nr",CBRFC
+san_joaquin_river_millerton_reservoir,4,7,296.55,36.98439397,-119.7243124,1676.0,11251000,San Joaquin R BL Friant CA ,,,FRAC1,San Joaquin River - Millerton Reservoir,CNRFC
+merced_river_yosemite_at_pohono_bridge,4,7,3882.0,37.71627778,-119.6656667,321.0,11266500,Merced R A Pohono Bridge NR Yosemite CA,,,POHC1,Merced River - Yosemite at Pohono Bridge,CNRFC
+american_river_folsom_lake,4,7,239.0,38.70452778,-121.164361,1863.0,11446220,American R BL Folsom Dam NR Folsom CA ,,,FOLC1,American River - Folsom Lake,CNRFC
+colville_r_at_kettle_falls,4,7,1400.0,48.59435,-118.06249,1007.0,12409000,"Colville R at Kettle Falls, WA",12409000:WA:USGS,Colville R at Kettle Falls,,,
+stehekin_r_at_stehekin,4,7,1099.0,48.32958,-120.69177,321.0,12451000,"Stehekin River at Stehekin, WA",12451000:WA:USGS,Stehekin R at Stehekin,STHW1,Stehekin - At Stehekin ,NWRFC
+detroit_lake_inflow,4,6,1094.0,44.75262,-122.29841,453.0,14181500,North Santiam River at Niagara OR,14181500:OR:USGS,Detroit Lake Inflow,DETO3,North Santiam - Detroit Dam,NWRFC
+virgin_r_at_virtin,4,7,3500.0,37.20415,-113.18078,956.0,09406000,"Virgin River at Virgin, UT",09406000:UT:USGS,Virgin R at Virtin,VIRU1,Virgin - Virgin,CBRFC
+skagit_ross_reservoir,4,7,1220.0,48.732171,-121.0676138,,,,,,RODW1,Skagit - Ross Reservoir,NWRFC
+boysen_reservoir_inflow,4,7,4609.0,43.42496,-108.17899,7701.0,06259000,"Wind River Below Boysen Reservoir, WY",06259000:WY:USGS,Boysen Reservoir Inflow,SBDW4,Boysen Reservoir Inflow ,MBRFC
+pecos_r_nr_pecos,3,7,7503.0,35.70835,-105.6827,189.0,08378500,"Pecos River Near Pecos, NM",08378500:NM:USGS,Pecos R nr Pecos,PCON5,Pecos River Near Pecos,WGRFC
+owyhee_r_bl_owyhee_dam,4,7,2344.0,43.65444,-117.25583,11160.0,13183000,Owyhee River Below Owyhee Dam,13183000:OR:USGS,Owyhee R bl Owyhee Dam,OWYO3,Owyhee - Owyhee Dam,NWRFC
