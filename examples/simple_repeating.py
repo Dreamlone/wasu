@@ -5,6 +5,7 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.train_model import SimpleRepeatingTrainModel
+from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
 
@@ -19,6 +20,8 @@ def generate_forecast_repeating_last_value():
 
     # Save into file
     model.save_predictions_as_submit(predicted, path='./results/simple_repeating_07_11_2023.csv')
+
+    TimeSeriesPlot().predicted_time_series(predicted)
 
 
 if __name__ == '__main__':

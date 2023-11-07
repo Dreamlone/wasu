@@ -37,11 +37,12 @@ class TrainModel:
 
         # Generate index for tables to identify "site - issue date" pair
         df = self.output.output_example
-        df['index'] = (df['site_id'].astype(str) + df['issue_date'].astype(str))
-        predicted['index'] = (predicted['site_id'].astype(str) + predicted['issue_date'].astype(str))
+        df['index'] = (df['site_id'].astype(str) + pd.to_datetime(df['issue_date']).dt.strftime('%Y-%m-%d'))
+        predicted['index'] = (predicted['site_id'].astype(str) + pd.to_datetime(predicted['issue_date']).dt.strftime('%Y-%m-%d'))
 
         submit = df[['index']].merge(predicted, on='index')
         submit = submit.drop(columns=['index'])
+        submit['issue_date'] = pd.to_datetime(predicted['issue_date']).dt.strftime('%Y-%m-%d')
         submit.to_csv(path, index=False)
 
 
@@ -87,16 +88,13 @@ class AdvancedRepeatingTrainModel(TrainModel):
     def __init__(self, train_df: pd.DataFrame):
         super().__init__(train_df)
 
-        self.lower_ratio = 0.1
-        self.above_ratio = 0.1
+        self.lower_ratio = 0.3
+        self.above_ratio = 0.3
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         self.train_df = self.train_df.dropna()
 
         metadata: pd.DataFrame = kwargs['metadata']
-        monthly_df: pd.DataFrame = kwargs['monthly_df']
-        monthly_df = monthly_df.sort_values(by=['site_id', 'forecast_year', 'year'])
-
         df_to_send = []
         # For every site
         for site in list(submission_format['site_id'].unique()):
@@ -110,13 +108,6 @@ class AdvancedRepeatingTrainModel(TrainModel):
             submission_site = submission_format[submission_format['site_id'] == site]
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
-
-            monthly_site_df = monthly_df[monthly_df['site_id'] == site]
-            monthly_site_df = monthly_site_df.dropna()
-            # Remain only values for the season
-            monthly_site_df = monthly_site_df[monthly_site_df['month'] >= season_start_month]
-            monthly_site_df = monthly_site_df[monthly_site_df['month'] <= season_end_month]
-            cumulative = monthly_site_df.groupby(['year']).agg({'volume': 'sum'}).reset_index()
 
             submit = self._generate_forecasts_for_site(historical_values=site_df,
                                                        submission_site=submission_site)

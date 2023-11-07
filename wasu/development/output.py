@@ -3,9 +3,7 @@ from typing import Union
 
 import pandas as pd
 
-
-def get_project_path() -> Path:
-    return Path(__file__).parent.parent.parent
+from wasu.development.paths import get_project_path
 
 
 def path_to_submission_file():
