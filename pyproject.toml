@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 geopandas = "^0.14.0"
 contextily = "^1.4.0"
+loguru = "^0.7.2"
 
 
 [build-system]

@@ -19,9 +19,12 @@ def generate_forecast_repeating_last_value_using_test_sample():
     train_monthly_df = pd.read_csv(Path('../data/train_monthly_naturalized_flow.csv'), parse_dates=parse_dates)
     monthly_df = pd.concat([train_monthly_df, test_monthly_df])
 
+    # Load dataframe with metadata
+    metadata = pd.read_csv(Path('../data/metadata_TdPVeJC.csv'))
+
     # Define simple model to make a predictions
     model = AdvancedRepeatingTrainModel(train_df=train_df)
-    predicted = model.predict(submission_format, monthly_df=monthly_df)
+    predicted = model.predict(submission_format, monthly_df=monthly_df, metadata=metadata)
 
     # Save into file
     model.save_predictions_as_submit(predicted, path='./results/advanced_repeating_07_11_2023.csv')
