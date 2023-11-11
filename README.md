@@ -2,6 +2,8 @@
 
 Water Supply Forecast competition model
 
-## Important reminders (for myself)
+## Using data
 
-- Only 23 of the 26 sites have monthly data available
+- NRCS and RFCs monthly naturalized flow (see `test_monthly_naturalized_flow.csv` 
+    and `train_monthly_naturalized_flow.csv` files) - 23/26
+- USGS streamflow - 25/26

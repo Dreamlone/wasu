@@ -1,7 +1,0 @@
--e data_download
--e data_reading
-
-black
-conda-lock
-pip-tools
-ruff
