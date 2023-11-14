@@ -5,29 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from loguru import logger
 
+from wasu.development.main import collect_usgs_streamflow_time_series_for_site
 from wasu.development.paths import path_to_data_folder, path_to_examples_folder
-
-
-def collect_usgs_streamflow_time_series_for_site(path_to_folder: Path, site_id: str) -> Union[pd.DataFrame, None]:
-    """ Collect time series for all available years """
-    all_files = list(path_to_folder.iterdir())
-    all_files.sort()
-
-    site_df = []
-    for year_folder in all_files:
-        try:
-            site_year = pd.read_csv(Path(year_folder, f'{site_id}.csv'), parse_dates=['datetime'])
-            site_df.append(site_year)
-        except Exception as ex:
-            logger.warning(f'Cannot process USGS streamflow file for site {site_id} in {year_folder} due to {ex}')
-
-    if len(site_df) < 1:
-        logger.info(f'There is no data for site {site_id}')
-        return None
-
-    site_df = pd.concat(site_df)
-    site_df = site_df.sort_values(by='datetime')
-    return site_df
 
 
 class TimeSeriesPlot:
@@ -51,7 +30,7 @@ class TimeSeriesPlot:
                                              parse_dates=['issue_date'])
 
         # Get missing years (in test years)
-        all_years = list(range(2000, 2023))
+        all_years = list(range(2000, 2024))
         test_years = set(all_years) - set(list(self.train['year'].dt.year))
         self.test_years = pd.DataFrame({'year': list(test_years)})
         self.test_years['volume'] = 0
@@ -121,7 +100,8 @@ class TimeSeriesPlot:
                         label='Test years', s=140, alpha=0.6, marker="s")
             ax1.tick_params(axis='y')
             ax1.legend()
-            plt.xlim(min(streamflow_df['datetime']), max(streamflow_df['datetime']))
+            plt.xlim(min(self.test_years['year']) - pd.DateOffset(years=1),
+                     max(self.test_years['year']) - pd.DateOffset(years=5))
             plt.grid(c='#DCDCDC')
 
             ax2 = ax1.twinx()
@@ -130,6 +110,8 @@ class TimeSeriesPlot:
             plt.xlim(min(streamflow_df['datetime']), max(streamflow_df['datetime']))
             ax2.tick_params(axis='y')
             plt.title(f"USGS Streamflow for site {site}")
+            plt.xlim(min(self.test_years['year']) - pd.DateOffset(years=1),
+                     max(self.test_years['year']) - pd.DateOffset(years=5))
             plt.savefig(Path(plots_folder, f'{site}_time_series_plot.png'))
             plt.close()
 
