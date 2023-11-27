@@ -4,7 +4,7 @@ import warnings
 
 import pandas as pd
 
-from wasu.development.models.train_model import AdvancedRepeatingTrainModel, StreamFlowRegression
+from wasu.development.models.train_model import StreamFlowRegression
 from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
@@ -22,7 +22,7 @@ def generate_forecast_based_on_streamflow():
     predicted = model.predict(submission_format, metadata=metadata, path_to_streamflow=path_to_streamflow)
 
     # Save into file
-    model.save_predictions_as_submit(predicted, path='./results/advanced_repeating_07_11_2023.csv')
+    model.save_predictions_as_submit(predicted, path='./results/usgs_streamflow_27_11_2023.csv')
 
     TimeSeriesPlot().predicted_time_series(predicted)
 
