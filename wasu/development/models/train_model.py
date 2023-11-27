@@ -1,10 +1,13 @@
+import itertools
 from abc import abstractmethod
 from pathlib import Path
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from loguru import logger
-from sklearn.linear_model import LinearRegression
+from matplotlib import pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
 
 from wasu.development.main import collect_usgs_streamflow_time_series_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
@@ -151,14 +154,20 @@ class StreamFlowRegression(TrainModel):
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
         # One month
-        self.aggregation_days = 45
+        self.aggregation_days = 180
         self.features_columns = ['mean_value', 'sum_value', 'min_value', 'max_value']
+
+        self.statistics = []
+        self.vis = False
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         self.train_df = self.train_df.dropna()
 
         metadata: pd.DataFrame = kwargs['metadata']
         path_to_streamflow: Path = kwargs['path_to_streamflow']
+        self.vis: bool = kwargs.get('vis')
+        if self.vis is None:
+            self.vis = False
 
         df_to_send = []
         # For every site
@@ -173,6 +182,8 @@ class StreamFlowRegression(TrainModel):
                 submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
                                                                        submission_site=submission_site)
                 df_to_send.append(submit)
+                self.statistics.append([site, 'backup'])
+                continue
 
             metadata_site = metadata[metadata['site_id'] == site]
             season_start_month = metadata_site['season_start_month'].values[0]
@@ -186,11 +197,16 @@ class StreamFlowRegression(TrainModel):
                                                            streamflow_df=streamflow_df,
                                                            submission_site=submission_site)
                 df_to_send.append(submit)
+                self.statistics.append([site, 'streamflow model'])
             except Exception as ex:
                 logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
                 submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
                                                                        submission_site=submission_site)
                 df_to_send.append(submit)
+                self.statistics.append([site, 'backup'])
+
+        for case in self.statistics:
+            print(f'Site: {case[0]}. Model: {case[1]}')
 
         df_to_send = pd.concat(df_to_send)
         return df_to_send
@@ -281,9 +297,58 @@ class StreamFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = LinearRegression()
+        reg = RandomForestRegressor(n_estimators=15)
         reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
+        if self.vis is True:
+            # Make visualization 3d plot - TODO refactor
+            cmap = 'coolwarm'
+            x_vals = np.array(dataframe_for_model_fitting['min_value'])
+            y_vals = np.array(dataframe_for_model_fitting['mean_value'])
+            z_vals = np.array(dataframe_for_model_fitting['target'])
+
+            # Generate dataframe for model predict
+            generated_x_values = np.linspace(min(x_vals), max(x_vals), 20)
+            df_with_features = []
+            for x_value in generated_x_values:
+                generated_y_values = np.linspace(min(y_vals), max(y_vals), 20)
+                feature_df = pd.DataFrame({'mean_value': generated_y_values})
+                feature_df['min_value'] = x_value
+                df_with_features.append(feature_df)
+            df_with_features = pd.concat(df_with_features)
+            for feature in self.features_columns:
+                if feature not in ['mean_value', 'min_value']:
+                    df_with_features[feature] = dataframe_for_model_fitting[feature].mean()
+
+            predicted = reg.predict(df_with_features[self.features_columns])
+            points = np.ravel(z_vals)
+
+            fig = plt.figure(figsize=(16, 7))
+            # First plot
+            ax = fig.add_subplot(121, projection='3d')
+            surf = ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
+            cb = fig.colorbar(surf, shrink=0.3, aspect=10)
+            ax.scatter(np.array(df_with_features['min_value']),
+                       np.array(df_with_features['mean_value']),
+                       predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+            cb.set_label(f'Target', fontsize=12)
+            ax.view_init(3, 10)
+            ax.set_xlabel('min_value', fontsize=13)
+            ax.set_ylabel('mean_value', fontsize=13)
+            ax.set_zlabel('target', fontsize=13)
+
+            # Second plot
+            ax = fig.add_subplot(122, projection='3d')
+            ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
+            ax.scatter(np.array(df_with_features['min_value']),
+                       np.array(df_with_features['mean_value']),
+                       predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+            ax.view_init(35, 50)
+            ax.set_xlabel('min_value', fontsize=13)
+            ax.set_ylabel('mean_value', fontsize=13)
+            ax.set_zlabel('target', fontsize=13)
+            plt.show()
+
         return reg, min_target, max_target
 
     @staticmethod
