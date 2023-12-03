@@ -43,7 +43,7 @@ desired issue date
 
 ### SNOTEL-based predictions
 
-**Public Averaged Mean Quantile Loss**: 187.2938
+**Public Averaged Mean Quantile Loss**: 186.9168
 
 Key features description: 
 
