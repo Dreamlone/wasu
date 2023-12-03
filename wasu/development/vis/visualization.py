@@ -1,12 +1,13 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Any, List
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from loguru import logger
+import numpy as np
 
-from wasu.development.main import collect_usgs_streamflow_time_series_for_site
-from wasu.development.paths import path_to_data_folder, path_to_examples_folder
+from wasu.development.data import collect_usgs_streamflow_time_series_for_site
+from wasu.development.paths import path_to_data_folder, path_to_examples_folder, path_to_plots_folder
 
 
 class TimeSeriesPlot:
@@ -38,8 +39,8 @@ class TimeSeriesPlot:
 
     def predicted_time_series(self, predicted: pd.DataFrame):
         """ Calculate actual volume per season for test and launch algorithm """
-        plots_folder = Path(path_to_examples_folder(), 'predicted_plots')
-        plots_folder.mkdir(exist_ok=True)
+        plots_folder = Path(path_to_plots_folder(), 'predicted_plots')
+        plots_folder.mkdir(exist_ok=True, parents=True)
 
         for site in list(self.submission_format['site_id'].unique()):
             predicted_site = predicted[predicted['site_id'] == site]
@@ -71,8 +72,8 @@ class TimeSeriesPlot:
 
     def usgs_streamflow(self, path_to_folder: Union[str, Path]):
         """ Create plots actual data and USGS streamflow """
-        plots_folder = Path(path_to_examples_folder(), 'usgs_streamflow_plots')
-        plots_folder.mkdir(exist_ok=True)
+        plots_folder = Path(path_to_plots_folder(), 'usgs_streamflow_plots')
+        plots_folder.mkdir(exist_ok=True, parents=True)
 
         if isinstance(path_to_folder, str):
             path_to_folder = Path(path_to_folder)
@@ -130,3 +131,52 @@ class TimeSeriesPlot:
         cumulative = monthly_site_df.groupby(['forecast_year']).agg({'volume': 'sum'}).reset_index()
 
         return train_site_df, cumulative
+
+
+def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, features_columns: List[str]):
+    cmap = 'coolwarm'
+    x_vals = np.array(dataframe_for_model_fitting['min_value'])
+    y_vals = np.array(dataframe_for_model_fitting['mean_value'])
+    z_vals = np.array(dataframe_for_model_fitting['target'])
+
+    # Generate dataframe for model predict
+    generated_x_values = np.linspace(min(x_vals), max(x_vals), 20)
+    df_with_features = []
+    for x_value in generated_x_values:
+        generated_y_values = np.linspace(min(y_vals), max(y_vals), 20)
+        feature_df = pd.DataFrame({'mean_value': generated_y_values})
+        feature_df['min_value'] = x_value
+        df_with_features.append(feature_df)
+    df_with_features = pd.concat(df_with_features)
+    for feature in features_columns:
+        if feature not in ['mean_value', 'min_value']:
+            df_with_features[feature] = dataframe_for_model_fitting[feature].mean()
+
+    predicted = reg.predict(df_with_features[features_columns])
+    points = np.ravel(z_vals)
+
+    fig = plt.figure(figsize=(16, 7))
+    # First plot
+    ax = fig.add_subplot(121, projection='3d')
+    surf = ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
+    cb = fig.colorbar(surf, shrink=0.3, aspect=10)
+    ax.scatter(np.array(df_with_features['min_value']),
+               np.array(df_with_features['mean_value']),
+               predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+    cb.set_label(f'Target', fontsize=12)
+    ax.view_init(3, 10)
+    ax.set_xlabel('min_value', fontsize=13)
+    ax.set_ylabel('mean_value', fontsize=13)
+    ax.set_zlabel('target', fontsize=13)
+
+    # Second plot
+    ax = fig.add_subplot(122, projection='3d')
+    ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
+    ax.scatter(np.array(df_with_features['min_value']),
+               np.array(df_with_features['mean_value']),
+               predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+    ax.view_init(35, 50)
+    ax.set_xlabel('min_value', fontsize=13)
+    ax.set_ylabel('mean_value', fontsize=13)
+    ax.set_zlabel('target', fontsize=13)
+    plt.show()

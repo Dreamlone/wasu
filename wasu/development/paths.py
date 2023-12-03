@@ -11,3 +11,7 @@ def path_to_data_folder():
 
 def path_to_examples_folder():
     return Path(get_project_path(), 'examples')
+
+
+def path_to_plots_folder():
+    return Path(get_project_path(), 'examples', 'plots')
