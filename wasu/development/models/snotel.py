@@ -23,7 +23,7 @@ class SnotelFlowRegression(TrainModel):
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
         # One month
-        self.aggregation_days = 180
+        self.aggregation_days = 90
         self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
                                  'mean_WTEQ_DAILY',
                                  'sum_PREC_DAILY', 'sum_TAVG_DAILY', 'sum_TMAX_DAILY', 'sum_TMIN_DAILY',
@@ -41,6 +41,7 @@ class SnotelFlowRegression(TrainModel):
 
         metadata: pd.DataFrame = kwargs['metadata']
         path_to_snotel: Path = kwargs['path_to_snotel']
+        enable_spatial_aggregation: Path = kwargs.get('enable_spatial_aggregation')
         self.vis: bool = kwargs.get('vis')
         if self.vis is None:
             self.vis = False
@@ -70,12 +71,19 @@ class SnotelFlowRegression(TrainModel):
                         f'End season month: {season_end_month}')
 
             try:
-                submit = self._generate_forecasts_for_site(historical_values=site_df,
-                                                           snotel_df=snotel_df,
-                                                           submission_site=submission_site,
-                                                           site_id=site)
+                if enable_spatial_aggregation is not None and enable_spatial_aggregation is True:
+                    # Calculate mean values per basin
+                    logger.info(f'Len before aggregation: {len(snotel_df)}')
+                    snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
+                                                               'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
+                                                               'WTEQ_DAILY': 'mean'})
+                    snotel_df = snotel_df.reset_index()
+                    logger.info(f'Len after aggregation: {len(snotel_df)}')
+                    snotel_df = snotel_df.dropna()
+                submit = self._generate_forecasts_for_site(historical_values=site_df, snotel_df=snotel_df,
+                                                           submission_site=submission_site, site_id=site)
                 df_to_send.append(submit)
-                self.statistics.append([site, 'streamflow model'])
+                self.statistics.append([site, 'snotel model'])
             except Exception as ex:
                 logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
                 submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
@@ -180,7 +188,7 @@ class SnotelFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=20)
+        reg = RandomForestRegressor(n_estimators=40)
         reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target
@@ -188,6 +196,8 @@ class SnotelFlowRegression(TrainModel):
     @staticmethod
     def __aggregate_features(agg_snotel: pd.DataFrame):
         # Collect statistics
+        agg_snotel = agg_snotel.dropna()
+
         dataset = pd.DataFrame()
         for feature in ['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY']:
             mean_value = agg_snotel[feature].mean()

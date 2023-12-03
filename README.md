@@ -26,11 +26,15 @@ This section provides explanations that explain how the algorithms work
 
 ### Simple repeating 
 
-In progress 
+**Public Averaged Mean Quantile Loss**: 330.1185
+
+### Advanced repeating 
+
+**Public Averaged Mean Quantile Loss**: 283.6057
 
 ### Streamflow-based predictions
 
-In progress 
+**Public Averaged Mean Quantile Loss**: 207.7306 
 
 ![2005-01-22 00:00:00_site_hungry_horse_reservoir_inflow.png](examples%2Fplots%2Fusgs_streamflow_3d%2F2005-01-22%2000%3A00%3A00_site_hungry_horse_reservoir_inflow.png)
 
@@ -38,6 +42,8 @@ Figure. 3d plot features (`min_value` and `mean_value`), `predictions` (surface)
 desired issue date
 
 ### SNOTEL-based predictions
+
+**Public Averaged Mean Quantile Loss**: 187.2938
 
 Key features description: 
 
