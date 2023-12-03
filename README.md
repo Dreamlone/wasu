@@ -39,6 +39,14 @@ desired issue date
 
 ### SNOTEL-based predictions
 
+Key features description: 
+
+- `PREC_DAILY` - precipitation
+- `TAVG_DAILY` - average daily temperature
+- `TMAX_DAILY` - max temperature
+- `TMIN_DAILY` - min temperature
+- `WTEQ_DAILY` - snow water equivalent	
+
 ![spatial_extend_snotel_fontenelle_reservoir_inflow.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_fontenelle_reservoir_inflow.png)
 
 Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site

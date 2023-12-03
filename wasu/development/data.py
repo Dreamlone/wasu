@@ -29,7 +29,7 @@ def collect_usgs_streamflow_time_series_for_site(path_to_folder: Path, site_id: 
     return site_df
 
 
-def collect_snotel_data_for_site(path_to_folder: Path, site_id: str):
+def collect_snotel_data_for_site(path_to_folder: Path, site_id: str, collect_only_in_basin: bool = False):
     """ Load SNOTEL data from separate files
 
     Collect data from all station for historical years merged with data
@@ -46,6 +46,12 @@ def collect_snotel_data_for_site(path_to_folder: Path, site_id: str):
     if len(site_snotel) < 1:
         logger.warning(f'Cannot process SNOTEL files for site {site_id} due to there are no stations related to site')
         return None
+    if collect_only_in_basin is True:
+        site_snotel = site_snotel[site_snotel['in_basin'] == True]
+
+        if len(site_snotel) < 1:
+            logger.warning(f'Cannot process SNOTEL files for site {site_id} because there is no stations in the extend')
+            return None
 
     stations_ids = list(site_snotel['stationTriplet'].unique())
     stations_ids = [station.replace(':', '_') for station in stations_ids]

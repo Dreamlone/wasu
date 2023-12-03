@@ -25,7 +25,8 @@ def show_spatial_plot():
     for row_id, spatial_object in spatial_objects.iterrows():
         site_id = spatial_object.site_id
         spatial_df = GeoDataFrame(crs="EPSG:4326", geometry=[spatial_object.geometry])
-        df = collect_snotel_data_for_site(path_to_folder=Path('../../data/snotel'), site_id=site_id)
+        df = collect_snotel_data_for_site(path_to_folder=Path('../../data/snotel'), site_id=site_id,
+                                          collect_only_in_basin=True)
         df = df[['station', 'latitude', 'longitude']].drop_duplicates()
 
         df = prepare_points_layer(df)
