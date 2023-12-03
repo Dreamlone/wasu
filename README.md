@@ -39,4 +39,6 @@ desired issue date
 
 ### SNOTEL-based predictions
 
-In progress 
+![spatial_extend_snotel_fontenelle_reservoir_inflow.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_fontenelle_reservoir_inflow.png)
+
+Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
