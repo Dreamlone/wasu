@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from matplotlib import pyplot as plt
+from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 
 from wasu.development.data import collect_usgs_streamflow_time_series_for_site
@@ -28,6 +29,7 @@ class StreamFlowRegression(TrainModel):
 
         self.statistics = []
         self.vis = False
+        self.vis_folder_name = 'usgs_streamflow_3d'
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         self.train_df = self.train_df.dropna()
@@ -64,7 +66,8 @@ class StreamFlowRegression(TrainModel):
             try:
                 submit = self._generate_forecasts_for_site(historical_values=site_df,
                                                            streamflow_df=streamflow_df,
-                                                           submission_site=submission_site)
+                                                           submission_site=submission_site,
+                                                           site_id=site)
                 df_to_send.append(submit)
                 self.statistics.append([site, 'streamflow model'])
             except Exception as ex:
@@ -81,7 +84,8 @@ class StreamFlowRegression(TrainModel):
         return df_to_send
 
     def _generate_forecasts_for_site(self, historical_values: pd.DataFrame,
-                                     streamflow_df: pd.DataFrame, submission_site: pd.DataFrame):
+                                     streamflow_df: pd.DataFrame, submission_site: pd.DataFrame,
+                                     site_id: str):
         streamflow_df = generate_datetime_into_julian(dataframe=streamflow_df, datetime_column='datetime',
                                                       julian_column='julian_datetime', round_julian=3)
 
@@ -108,7 +112,7 @@ class StreamFlowRegression(TrainModel):
             # Fit model
             model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
                                                                                      known_streamflow_values=known_streamflow_values,
-                                                                                     issue_date=issue_date)
+                                                                                     issue_date=issue_date, site_id=site_id)
 
             # Generate forecast
             agg_streamflow = known_streamflow_values[known_streamflow_values['julian_datetime'] >= issue_date_agg_start_julian]
@@ -133,7 +137,8 @@ class StreamFlowRegression(TrainModel):
         return submit
 
     def _fit_model_based_on_historical_data(self, known_historical_values: pd.DataFrame,
-                                            known_streamflow_values: pd.DataFrame, issue_date):
+                                            known_streamflow_values: pd.DataFrame, issue_date: Timestamp,
+                                            site_id: str):
 
         dataframe_for_model_fitting = []
         for historical_year in list(known_historical_values['year'].dt.year):
@@ -171,7 +176,10 @@ class StreamFlowRegression(TrainModel):
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         if self.vis is True:
             # Make visualization 3d plot
-            created_spatial_plot(dataframe_for_model_fitting, reg, self.features_columns)
+            file_name = f'{issue_date}_site_{site_id}.png'
+            title = f'USGS streamflow model for site {site_id} and issue date {issue_date}'
+            created_spatial_plot(dataframe_for_model_fitting, reg, self.features_columns, self.vis_folder_name,
+                                 file_name, title)
 
         return reg, min_target, max_target
 

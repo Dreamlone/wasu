@@ -33,6 +33,8 @@ class TrainModel:
             path = 'default_submission.csv'
         if isinstance(path, str):
             path = Path(path).resolve()
+        base_dir = path.parent
+        base_dir.mkdir(exist_ok=True, parents=True)
 
         # Generate index for tables to identify "site - issue date" pair
         df = self.output.output_example

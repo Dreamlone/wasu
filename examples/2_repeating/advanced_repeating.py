@@ -11,11 +11,11 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_repeating_last_value_using_test_sample():
-    train_df = pd.read_csv(Path('../data/train.csv'), parse_dates=['year'])
-    submission_format = pd.read_csv(Path('../data/submission_format.csv'), parse_dates=['issue_date'])
+    train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
+    submission_format = pd.read_csv(Path('../../data/submission_format.csv'), parse_dates=['issue_date'])
 
     # Load dataframe with metadata
-    metadata = pd.read_csv(Path('../data/metadata_TdPVeJC.csv'))
+    metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
 
     # Define simple model to make a predictions
     model = AdvancedRepeatingTrainModel(train_df=train_df)
@@ -24,7 +24,7 @@ def generate_forecast_repeating_last_value_using_test_sample():
     # Save into file
     model.save_predictions_as_submit(predicted, path='./results/advanced_repeating_07_11_2023.csv')
 
-    TimeSeriesPlot().predicted_time_series(predicted)
+    TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_advanced_repeating')
 
 
 if __name__ == '__main__':

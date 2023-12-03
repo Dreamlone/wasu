@@ -37,9 +37,9 @@ class TimeSeriesPlot:
         self.test_years['volume'] = 0
         self.test_years['year'] = pd.to_datetime(self.test_years['year'], format='%Y')
 
-    def predicted_time_series(self, predicted: pd.DataFrame):
+    def predicted_time_series(self, predicted: pd.DataFrame, plots_folder_name: str = 'predicted_plots'):
         """ Calculate actual volume per season for test and launch algorithm """
-        plots_folder = Path(path_to_plots_folder(), 'predicted_plots')
+        plots_folder = Path(path_to_plots_folder(), plots_folder_name)
         plots_folder.mkdir(exist_ok=True, parents=True)
 
         for site in list(self.submission_format['site_id'].unique()):
@@ -48,6 +48,8 @@ class TimeSeriesPlot:
 
             train_site_df, cumulative = self._obtain_data_for_site(site)
 
+            fig_size = (20.0, 8.0)
+            fig, ax = plt.subplots(figsize=fig_size)
             plt.plot(pd.to_datetime(cumulative['forecast_year']), cumulative['volume'], color='green',
                      label='Naturalized flow', alpha=0.4)
             plt.plot(pd.to_datetime(train_site_df['year']), train_site_df['volume'], '-ok', color='orange',
@@ -133,17 +135,21 @@ class TimeSeriesPlot:
         return train_site_df, cumulative
 
 
-def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, features_columns: List[str]):
+def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, features_columns: List[str],
+                         folder_name: str, file_name: str, title: Union[str, None] = None):
+    plots_folder = Path(path_to_plots_folder(), folder_name)
+    plots_folder.mkdir(exist_ok=True, parents=True)
+
     cmap = 'coolwarm'
     x_vals = np.array(dataframe_for_model_fitting['min_value'])
     y_vals = np.array(dataframe_for_model_fitting['mean_value'])
     z_vals = np.array(dataframe_for_model_fitting['target'])
 
     # Generate dataframe for model predict
-    generated_x_values = np.linspace(min(x_vals), max(x_vals), 20)
+    generated_x_values = np.linspace(min(x_vals), max(x_vals), 150)
     df_with_features = []
     for x_value in generated_x_values:
-        generated_y_values = np.linspace(min(y_vals), max(y_vals), 20)
+        generated_y_values = np.linspace(min(y_vals), max(y_vals), 150)
         feature_df = pd.DataFrame({'mean_value': generated_y_values})
         feature_df['min_value'] = x_value
         df_with_features.append(feature_df)
@@ -158,11 +164,11 @@ def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, fe
     fig = plt.figure(figsize=(16, 7))
     # First plot
     ax = fig.add_subplot(121, projection='3d')
-    surf = ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
-    cb = fig.colorbar(surf, shrink=0.3, aspect=10)
     ax.scatter(np.array(df_with_features['min_value']),
                np.array(df_with_features['mean_value']),
-               predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+               predicted, c=np.ravel(predicted), cmap=cmap, s=1, alpha=0.3, vmin=min(points), vmax=max(points))
+    surf = ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
+    cb = fig.colorbar(surf, shrink=0.3, aspect=10)
     cb.set_label(f'Target', fontsize=12)
     ax.view_init(3, 10)
     ax.set_xlabel('min_value', fontsize=13)
@@ -171,12 +177,17 @@ def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, fe
 
     # Second plot
     ax = fig.add_subplot(122, projection='3d')
-    ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
     ax.scatter(np.array(df_with_features['min_value']),
                np.array(df_with_features['mean_value']),
-               predicted, c=np.ravel(predicted), cmap=cmap, s=10, alpha=0.5)
+               predicted, c=np.ravel(predicted), cmap=cmap, s=1, alpha=0.3, vmin=min(points), vmax=max(points))
+    ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
     ax.view_init(35, 50)
     ax.set_xlabel('min_value', fontsize=13)
     ax.set_ylabel('mean_value', fontsize=13)
     ax.set_zlabel('target', fontsize=13)
-    plt.show()
+    if title is not None:
+        plt.suptitle(title, fontsize=15)
+
+    logger.debug(f'Saved 3d plot into {plots_folder} with name {file_name}')
+    plt.savefig(Path(plots_folder, file_name))
+    plt.close()

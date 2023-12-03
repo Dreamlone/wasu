@@ -21,7 +21,7 @@ def generate_forecast_repeating_last_value():
     # Save into file
     model.save_predictions_as_submit(predicted, path='./results/simple_repeating_07_11_2023.csv')
 
-    TimeSeriesPlot().predicted_time_series(predicted)
+    TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_simple_repeating')
 
 
 if __name__ == '__main__':

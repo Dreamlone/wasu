@@ -4,7 +4,8 @@ Water Supply Forecast competition model
 
 ## How to use this repository
 
-This repository contains code both for preparing visualisations and for training and applying predictive models.
+This repository contains code both for preparing visualisations and for training and ap
+plying predictive models.
 
 It is recommended to start exploration with [examples](./examples) folder:
 
@@ -30,6 +31,11 @@ In progress
 ### Streamflow-based predictions
 
 In progress 
+
+![2005-01-22 00:00:00_site_hungry_horse_reservoir_inflow.png](examples%2Fplots%2Fusgs_streamflow_3d%2F2005-01-22%2000%3A00%3A00_site_hungry_horse_reservoir_inflow.png)
+
+Figure. 3d plot features (`min_value` and `mean_value`), `predictions` (surface) and `actual` values (points) for training sample for
+desired issue date
 
 ### SNOTEL-based predictions
 
