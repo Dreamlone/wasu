@@ -22,7 +22,11 @@ def ensemble_from_files(path: str):
     """ Collect predictions from the files and collect information about them into one prediction """
     files_to_ensemble = ['../2_repeating/results/advanced_repeating_07_11_2023.csv',
                          '../3_streamflow/results/usgs_streamflow_27_11_2023.csv',
-                         '../4_snotel/results/snotel_03_12_2023.csv']
+                         '../4_snotel/results/snotel_03_12_2023.csv',
+                         '../4_snotel/results/period_30_snotel_04_12_2023.csv',
+                         '../4_snotel/results/period_45_all_stations_snotel_04_12_2023.csv']
+
+    # Load tables from csv files
     dataframes = []
     for file in files_to_ensemble:
         file = Path(file).resolve()
@@ -38,12 +42,15 @@ def ensemble_from_files(path: str):
         for df in dataframes:
             current_record = df.iloc[row_id]
             predicted_values.append(current_record.volume_50)
+        predicted_values = np.array(predicted_values)
 
+        mean_value = np.mean(np.array(predicted_values))
+        adjust_ratio = 0.15
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
-                                'volume_10': [min(predicted_values)],
-                                'volume_50': [np.mean(np.array(predicted_values))],
-                                'volume_90': [max(predicted_values)]})
+                                'volume_10': [np.percentile(predicted_values, 10) - (mean_value * adjust_ratio)],
+                                'volume_50': [mean_value],
+                                'volume_90': [np.percentile(predicted_values, 90) + (mean_value * adjust_ratio)]})
         corrected_response.append(dataset)
 
     corrected_response = pd.concat(corrected_response)

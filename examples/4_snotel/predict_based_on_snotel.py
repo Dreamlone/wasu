@@ -24,7 +24,7 @@ def generate_forecast_based_on_snotel():
                               enable_spatial_aggregation=True)
 
     # Save into file
-    model.save_predictions_as_submit(predicted, path='./results/snotel_03_12_2023.csv')
+    model.save_predictions_as_submit(predicted, path='./results/period_45_all_stations_snotel_04_12_2023.csv')
 
     TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_snotel')
 
