@@ -100,6 +100,16 @@ Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
 ### Ensembling of previous predictions (with smoothing)
 
-**Public Averaged Mean Quantile Loss**: 151.8024
+**Public Averaged Mean Quantile Loss**: 149.5267
 
 ![fontenelle_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_first_ensemble_with_smoothing%2Ffontenelle_reservoir_inflow_time_series_plot.png)
+
+### SNODAS 
+
+Modeled snow layer thickness, total of snow layers
+
+## Additional dependencies 
+
+```bash
+sudo apt install gdal-bin
+```

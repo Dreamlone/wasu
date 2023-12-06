@@ -3,11 +3,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from loguru import logger
-from matplotlib import pyplot as plt
 from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 
-from wasu.development.data import collect_usgs_streamflow_time_series_for_site, collect_snotel_data_for_site
+from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
 from wasu.development.models.repeating import AdvancedRepeatingTrainModel
 from wasu.development.models.train_model import TrainModel

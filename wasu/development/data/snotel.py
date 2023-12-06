@@ -1,32 +1,7 @@
 from pathlib import Path
-from typing import Union
 
-import geopandas
 import pandas as pd
-from geopandas import GeoDataFrame
 from loguru import logger
-
-
-def collect_usgs_streamflow_time_series_for_site(path_to_folder: Path, site_id: str) -> Union[pd.DataFrame, None]:
-    """ Collect time series for all available years """
-    all_files = list(path_to_folder.iterdir())
-    all_files.sort()
-
-    site_df = []
-    for year_folder in all_files:
-        try:
-            site_year = pd.read_csv(Path(year_folder, f'{site_id}.csv'), parse_dates=['datetime'])
-            site_df.append(site_year)
-        except Exception as ex:
-            logger.warning(f'Cannot process USGS streamflow file for site {site_id} in {year_folder} due to {ex}')
-
-    if len(site_df) < 1:
-        logger.info(f'There is no data for site {site_id}')
-        return None
-
-    site_df = pd.concat(site_df)
-    site_df = site_df.sort_values(by='datetime')
-    return site_df
 
 
 def collect_snotel_data_for_site(path_to_folder: Path, site_id: str, collect_only_in_basin: bool = False):
@@ -83,10 +58,3 @@ def collect_snotel_data_for_site(path_to_folder: Path, site_id: str, collect_onl
 
     site_df = pd.concat(site_df)
     return site_df
-
-
-def prepare_points_layer(spatial_dataframe: pd.DataFrame, epsg_code: str = "4326",
-                         lon: str = 'longitude', lat: str = 'latitude') -> GeoDataFrame:
-    geometry = geopandas.points_from_xy(spatial_dataframe[lon], spatial_dataframe[lat])
-    gdf = GeoDataFrame(spatial_dataframe, crs=f"EPSG:{epsg_code}", geometry=geometry)
-    return gdf

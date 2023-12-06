@@ -10,7 +10,8 @@ import warnings
 from geopandas import GeoDataFrame
 from loguru import logger
 
-from wasu.development.data import collect_snotel_data_for_site, prepare_points_layer
+from wasu.development.data.common import prepare_points_layer
+from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.paths import path_to_plots_folder
 
 warnings.filterwarnings('ignore')

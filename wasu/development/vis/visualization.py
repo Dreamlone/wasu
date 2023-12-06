@@ -6,8 +6,8 @@ import pandas as pd
 from loguru import logger
 import numpy as np
 
-from wasu.development.data import collect_usgs_streamflow_time_series_for_site
-from wasu.development.paths import path_to_data_folder, path_to_examples_folder, path_to_plots_folder
+from wasu.development.data.streamflow import collect_usgs_streamflow_time_series_for_site
+from wasu.development.paths import path_to_data_folder, path_to_plots_folder
 
 
 class TimeSeriesPlot:
