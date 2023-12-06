@@ -14,6 +14,8 @@ It is recommended to start exploration with [examples](./examples) folder:
 - [2_repeating](./examples/2_repeating) - repeating of last known values to generate forecasts (in two versions)
 - [3_streamflow](./examples/3_streamflow) - use of aggregated statistics from USGS streamflow data 
 - [4_snotel](./examples/4_snotel) - use of aggregated statistics from snowpack SNOTEL data 
+- [5_simple_ensemble](./examples/5_simple_ensemble) - ensemble of previous forecasts from data sources
+- [6_simple_ensemble_with_smoothing](./examples/6_simple_ensemble_with_smoothing) - ensembling with smoothing
 
 
 During code execution the `plots` folder is generated. 
@@ -89,3 +91,15 @@ Key features description:
 ![spatial_extend_snotel_fontenelle_reservoir_inflow.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_fontenelle_reservoir_inflow.png)
 
 Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
+
+### Ensembling of previous predictions
+
+**Public Averaged Mean Quantile Loss**: 150.2518
+
+![fontenelle_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_first_ensemble%2Ffontenelle_reservoir_inflow_time_series_plot.png)
+
+### Ensembling of previous predictions (with smoothing)
+
+**Public Averaged Mean Quantile Loss**: 151.8024
+
+![fontenelle_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_first_ensemble_with_smoothing%2Ffontenelle_reservoir_inflow_time_series_plot.png)
