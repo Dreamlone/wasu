@@ -21,7 +21,7 @@ def generate_forecast_based_on_snotel():
 
     model = SnotelFlowRegression(train_df=train_df)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              enable_spatial_aggregation=True)
+                              enable_spatial_aggregation=True, collect_only_in_basin=True)
 
     # Save into file
     model.save_predictions_as_submit(predicted, path='./results/period_45_all_stations_snotel_04_12_2023.csv')

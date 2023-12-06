@@ -16,14 +16,14 @@ from wasu.development.models.train_model import TrainModel
 class SnotelFlowRegression(TrainModel):
     """ Create forecasts based on streamflow USGS data """
 
-    def __init__(self, train_df: pd.DataFrame):
+    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
         # One month
-        self.aggregation_days = 90
+        self.aggregation_days = aggregation_days
         self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
                                  'mean_WTEQ_DAILY',
                                  'sum_PREC_DAILY', 'sum_TAVG_DAILY', 'sum_TMAX_DAILY', 'sum_TMIN_DAILY',
@@ -37,11 +37,21 @@ class SnotelFlowRegression(TrainModel):
         self.vis = False
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """ Make predictions based on SNOTEL data
+
+        :param submission_format: pandas  table with example of output
+        :param kwargs: additional parameters
+            - enable_spatial_aggregation - aggregated data from all stations per datetime label or not
+            - collect_only_in_basin - is there a need to use only stations which is included in the basin of site or all
+        """
         self.train_df = self.train_df.dropna()
 
         metadata: pd.DataFrame = kwargs['metadata']
         path_to_snotel: Path = kwargs['path_to_snotel']
         enable_spatial_aggregation: Path = kwargs.get('enable_spatial_aggregation')
+        collect_only_in_basin = kwargs.get('collect_only_in_basin')
+        if collect_only_in_basin is None:
+            collect_only_in_basin = True
         self.vis: bool = kwargs.get('vis')
         if self.vis is None:
             self.vis = False
@@ -49,7 +59,7 @@ class SnotelFlowRegression(TrainModel):
         df_to_send = []
         # For every site
         for site in list(submission_format['site_id'].unique()):
-            snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=True)
+            snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=collect_only_in_basin)
 
             submission_site = submission_format[submission_format['site_id'] == site]
             site_df = self.train_df[self.train_df['site_id'] == site]

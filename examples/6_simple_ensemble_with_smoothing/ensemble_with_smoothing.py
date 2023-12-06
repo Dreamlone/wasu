@@ -25,7 +25,7 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
             for target in ['volume_10', 'volume_50', 'volume_90']:
                 # Process every target column
-                site_df[target] = site_df[target].rolling(3).mean()
+                site_df[target] = site_df[target].rolling(2).mean()
                 site_df = site_df.fillna(method='backfill')
 
             smoothed_df.append(site_df)
@@ -60,12 +60,14 @@ def ensemble_from_files(path: str):
         predicted_values = np.array(predicted_values)
 
         mean_value = np.median(np.array(predicted_values))
-        adjust_ratio = 0.25
+        adjust_ratio = 0.3
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
-                                'volume_10': [np.percentile(predicted_values, 10) - (mean_value * adjust_ratio)],
+                                'volume_10': [np.percentile(predicted_values, 10) -
+                                              (np.percentile(predicted_values, 10) * adjust_ratio)],
                                 'volume_50': [mean_value],
-                                'volume_90': [np.percentile(predicted_values, 90) + (mean_value * adjust_ratio)]})
+                                'volume_90': [np.percentile(predicted_values, 90) +
+                                              (np.percentile(predicted_values, 90) * adjust_ratio)]})
         corrected_response.append(dataset)
 
     corrected_response = pd.concat(corrected_response)
