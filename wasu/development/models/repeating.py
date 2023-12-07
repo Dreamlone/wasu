@@ -84,6 +84,11 @@ class AdvancedRepeatingTrainModel(TrainModel):
 
             # Volume from the previous year
             last_known_value = historical_values[historical_values['year'].dt.year == issue_year - 1]
+            if last_known_value is None or len(last_known_value) < 1:
+                # Check two years ago
+                last_known_value = historical_values[historical_values['year'].dt.year == issue_year - 2]
+            if last_known_value is None or len(last_known_value) < 1:
+                last_known_value = historical_values[historical_values['year'].dt.year == issue_year - 3]
             previous_year_value = last_known_value['volume'].values[0]
 
             row['volume_10'] = previous_year_value - (previous_year_value * self.lower_ratio)
