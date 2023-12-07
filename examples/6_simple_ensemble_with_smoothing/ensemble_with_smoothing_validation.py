@@ -43,7 +43,7 @@ def ensemble_from_files():
                          '../4_snotel/validation/snotel_45_all_stations.csv',
                          '../4_snotel/validation/snotel_90_all_stations.csv',
                          '../4_snotel/validation/snotel_100_all_stations.csv']
-    validator = ModelValidation()
+    validator = ModelValidation(folder_for_plots='ensemble')
 
     dataframes = []
     for file in files_to_ensemble:

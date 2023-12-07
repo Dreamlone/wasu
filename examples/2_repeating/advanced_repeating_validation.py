@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore')
 
 
 def validate_simple_model():
-    validator = ModelValidation()
+    validator = ModelValidation(folder_for_plots='advanced_repeating')
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     submission_format = validator.generate_submission_format()
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))

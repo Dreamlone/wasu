@@ -1,10 +1,14 @@
 import datetime
+from pathlib import Path
 from typing import List, Union, Dict
 
 import numpy as np
 import pandas as pd
 from loguru import logger
+from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+
+from wasu.development.paths import path_to_examples_folder
 
 
 def smape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -26,17 +30,20 @@ class ModelValidation:
 
     def __init__(self, issue_dates: Union[List[Dict], None] = None,
                  years_to_validate: Union[List[int], None] = None,
-                 sites_to_validate: Union[List[str], None] = None):
+                 sites_to_validate: Union[List[str], None] = None,
+                 folder_for_plots: str = 'default_model'):
         test_years = {2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023}
 
         self.issue_dates = issue_dates
         if self.issue_dates is None:
-            self.issue_dates = [{'month': 1, 'day': 15}, {'month': 2, 'day': 15}, {'month': 3, 'day': 15},
-                                {'month': 4, 'day': 15}]
+            self.issue_dates = [{'month': 1, 'day': 10}, {'month': 1, 'day': 20}, {'month': 1, 'day': 30},
+                                {'month': 2, 'day': 10}, {'month': 2, 'day': 20}, {'month': 2, 'day': 28},
+                                {'month': 3, 'day': 10}, {'month': 3, 'day': 20}, {'month': 3, 'day': 30},
+                                {'month': 4, 'day': 10}, {'month': 4, 'day': 20}, {'month': 4, 'day': 30}]
 
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
-            self.years_to_validate = [2014, 2016, 2018, 2020]
+            self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
         else:
             if len(set(self.years_to_validate).intersection(test_years)) > 0:
                 raise ValueError(f'Can not validate if the year is in test data: {test_years}')
@@ -46,6 +53,8 @@ class ModelValidation:
             self.sites_to_validate = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
                                       'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
                                       'yampa_r_nr_maybell', 'libby_reservoir_inflow']
+
+        self.folder_for_plots = folder_for_plots
 
     def generate_submission_format(self):
         df = []
@@ -85,10 +94,12 @@ class ModelValidation:
             df_for_comparison = pd.concat(df_for_comparison)
             all_values.append(df_for_comparison)
             self._print_metrics(df_for_comparison, site_to_validate)
+            self._make_plots(df_for_comparison, site_to_validate)
 
         # Calculate mean metrics for all sites at once
         all_values = pd.concat(all_values)
         self._print_metrics(all_values, 'all')
+        self._make_plots(all_values, 'all')
 
     @staticmethod
     def _print_metrics(df_for_comparison: pd.DataFrame, site_to_validate: str):
@@ -109,8 +120,59 @@ class ModelValidation:
         logger.info(f'Symmetric MAPE metric: {smape_metric:.2f}')
         logger.warning('--------------------------------------------')
 
-    @staticmethod
-    def _make_plots(df_for_comparison: pd.DataFrame, site_to_validate: str):
+    def _make_plots(self, df_for_comparison: pd.DataFrame, site_to_validate: str):
         logger.info(f'Make plots for {site_to_validate} site(s)')
-        # TODO implement it
-        raise NotImplementedError()
+
+        # Generate bi-plot first
+        plots_folder = Path(path_to_examples_folder(), 'plots_validation', self.folder_for_plots)
+        plots_folder.mkdir(exist_ok=True, parents=True)
+
+        fig_size = (12.0, 10.0)
+        fig, ax = plt.subplots(figsize=fig_size)
+
+        ax.scatter(df_for_comparison['actual'], df_for_comparison['volume_50'],
+                   c='blue', alpha=0.5, s=45, edgecolors={'#BCE7FF'})
+        ax.plot([min(df_for_comparison['actual']), max(df_for_comparison['actual'])],
+                [min(df_for_comparison['actual']), max(df_for_comparison['actual'])],
+                c='black', alpha=0.5, linewidth=2)
+        ax.set_xlabel(f'Actual. Site {site_to_validate}', fontsize=13)
+        ax.set_ylabel(f'Predicted. Site {site_to_validate}', fontsize=13)
+        plt.grid()
+        plt.title(f'Validation on {self.years_to_validate} years')
+        plt.savefig(Path(plots_folder, f'site_{site_to_validate}_biplot.png'))
+        plt.close()
+
+        ########################
+        # Barplot with metrics #
+        ########################
+        df_for_comparison['dayofyear'] = pd.to_datetime(df_for_comparison['issue_date']).dt.dayofyear
+        df_for_vis = []
+        visited_days = []
+        for dayofyear in list(df_for_comparison['dayofyear'].unique()):
+            need_to_skip = False
+            for visited_day in visited_days:
+                min_th = visited_day - 3
+                max_th = visited_day + 3
+                if min_th <= dayofyear <= max_th:
+                    need_to_skip = True
+            if need_to_skip is True:
+                continue
+
+            # Clip
+            day_df = df_for_comparison[df_for_comparison['dayofyear'] >= dayofyear - 3]
+            day_df = day_df[day_df['dayofyear'] <= dayofyear + 3]
+
+            smape_metric = smape(y_true=np.array(day_df['actual'], dtype=float),
+                                 y_pred=np.array(day_df['volume_50'], dtype=float))
+            df_for_vis.append(pd.DataFrame({'dayofyear': [dayofyear], 'SMAPE': [smape_metric]}))
+            visited_days.append(dayofyear)
+
+        df_for_vis = pd.concat(df_for_vis)
+
+        fig_size = (12.0, 7.0)
+        fig, ax = plt.subplots(figsize=fig_size)
+        plt.bar(df_for_vis['dayofyear'], df_for_vis['SMAPE'], width=5, color='blue', alpha=0.2, edgecolor='#BCE7FF')
+        plt.xlabel('Day of the year', fontsize=13)
+        plt.ylabel('SMAPE of the forecast', fontsize=13)
+        plt.savefig(Path(plots_folder, f'site_{site_to_validate}_barplot.png'))
+        plt.close()

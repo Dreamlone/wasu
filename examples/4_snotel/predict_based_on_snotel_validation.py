@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snotel():
-    validator = ModelValidation()
+    validator = ModelValidation(folder_for_plots='snotel')
 
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     submission_format = validator.generate_submission_format()
@@ -22,12 +22,12 @@ def generate_forecast_based_on_snotel():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snotel = Path('../../data/snotel').resolve()
 
-    model = SnotelFlowRegression(train_df=train_df, aggregation_days=110)
+    model = SnotelFlowRegression(train_df=train_df, aggregation_days=100)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              enable_spatial_aggregation=False, collect_only_in_basin=False)
+                              enable_spatial_aggregation=True, collect_only_in_basin=False)
 
     validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted, path='./validation/snotel_110_all_stations_without_aggregation.csv',
+    model.save_predictions_as_submit(predicted, path='./validation/snotel_100_all_stations.csv',
                                      submission_format=submission_format)
 
 
