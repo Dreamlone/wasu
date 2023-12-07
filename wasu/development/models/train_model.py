@@ -18,12 +18,14 @@ class TrainModel:
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(f'Abstract method')
 
-    def save_predictions_as_submit(self, predicted: pd.DataFrame, path: Union[None, str, Path] = None):
+    def save_predictions_as_submit(self, predicted: pd.DataFrame, path: Union[None, str, Path] = None,
+                                   submission_format: Union[pd.DataFrame, None] = None):
         """ Save results into desired submission format
 
         :param predicted: table with predicted values. Must contain the following columns:
             [site_id, issue_date, volume_10, volume_50, volume_90]
         :param path: path to the file where to save the results
+        :parma submission_format: table with submission to imitate
         """
         if set(list(predicted.columns)) != {'site_id', 'issue_date', 'volume_10', 'volume_50', 'volume_90'}:
             raise ValueError(f'Columns in the dataframe with predicted values are not compatible with submission '
@@ -38,6 +40,8 @@ class TrainModel:
 
         # Generate index for tables to identify "site - issue date" pair
         df = self.output.output_example
+        if submission_format is not None:
+            df = submission_format
         df['index'] = (df['site_id'].astype(str) + pd.to_datetime(df['issue_date']).dt.strftime('%Y-%m-%d'))
         predicted['index'] = (predicted['site_id'].astype(str) + pd.to_datetime(predicted['issue_date']).dt.strftime('%Y-%m-%d'))
 

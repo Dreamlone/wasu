@@ -21,6 +21,8 @@ def validate_simple_model():
     predicted = model.predict(submission_format, metadata=metadata)
 
     validator.compare_dataframes(predicted, train_df)
+    model.save_predictions_as_submit(predicted, path='./validation/advanced_repeating_val.csv',
+                                     submission_format=submission_format)
 
 
 if __name__ == '__main__':
