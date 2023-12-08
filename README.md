@@ -108,6 +108,15 @@ Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
 Modeled snow layer thickness, total of snow layers
 
+Data from SNODAS files:
+- Scaled Non-snow accumulation, 24-hour total
+- Scaled Snow accumulation, 24-hour total
+- Modeled snow layer thickness, total of snow layers
+- Modeled average temperature, SWE-weighted average of snow layers, 24-hour average
+- Modeled blowing snow sublimation, 24-hour total
+- Modeled melt, bottom of snow layers, 24-hour total
+- Modeled snowpack sublimation, 24-hour total
+
 ## Additional dependencies 
 
 ```bash

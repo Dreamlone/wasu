@@ -11,7 +11,8 @@ warnings.filterwarnings('ignore')
 
 def load_snodas():
     df = collect_snodas_data_for_site(path_to_folder=Path('../../data/snodas'),
-                                      site_id='hungry_horse_reservoir_inflow')
+                                      site_id='hungry_horse_reservoir_inflow',
+                                      vis=True)
 
 
 if __name__ == '__main__':
