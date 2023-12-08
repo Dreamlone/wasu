@@ -17,14 +17,14 @@ from wasu.development.vis.visualization import created_spatial_plot
 class StreamFlowRegression(TrainModel):
     """ Create forecasts based on streamflow USGS data """
 
-    def __init__(self, train_df: pd.DataFrame):
+    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 180):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
         # Days for parameters aggregation
-        self.aggregation_days = 180
+        self.aggregation_days = aggregation_days
         self.features_columns = ['mean_value', 'sum_value', 'min_value', 'max_value']
 
         self.statistics = []

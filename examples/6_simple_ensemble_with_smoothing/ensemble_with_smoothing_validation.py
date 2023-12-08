@@ -37,12 +37,23 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 
 def ensemble_from_files():
-    files_to_ensemble = ['../3_streamflow/validation/usgs_streamflow.csv',
-                         '../4_snotel/validation/snotel_30.csv',
-                         '../4_snotel/validation/snotel_30_all_stations.csv',
-                         '../4_snotel/validation/snotel_45_all_stations.csv',
-                         '../4_snotel/validation/snotel_90_all_stations.csv',
-                         '../4_snotel/validation/snotel_100_all_stations.csv']
+    files_to_ensemble = [#'../2_repeating/validation/advanced_repeating_val.csv',
+                         # '../3_streamflow/validation/usgs_streamflow_30.csv',
+                         #'../3_streamflow/validation/usgs_streamflow_50.csv',
+                         #'../3_streamflow/validation/usgs_streamflow_100.csv',
+                         #'../3_streamflow/validation/usgs_streamflow_180.csv',
+                         #'../4_snotel/validation/snotel_25_basin.csv',
+                         '../4_snotel/validation/snotel_50_all_stations.csv',
+                         '../4_snotel/validation/snotel_50_basin.csv',
+                         #'../4_snotel/validation/snotel_80_all_stations.csv',
+                         #'../4_snotel/validation/snotel_80_basin.csv',
+                         #'../4_snotel/validation/snotel_90_all_stations.csv',
+                         #'../4_snotel/validation/snotel_90_basin.csv',
+                         #'../4_snotel/validation/snotel_100_all_stations.csv',
+                         #'../4_snotel/validation/snotel_100_basin.csv',
+                         '../4_snotel/validation/snotel_180_all_stations.csv',
+                         #'../4_snotel/validation/snotel_180_basin.csv'
+        ]
     validator = ModelValidation(folder_for_plots='ensemble')
 
     dataframes = []

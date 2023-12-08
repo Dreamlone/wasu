@@ -36,10 +36,8 @@ class ModelValidation:
 
         self.issue_dates = issue_dates
         if self.issue_dates is None:
-            self.issue_dates = [{'month': 1, 'day': 10}, {'month': 1, 'day': 20}, {'month': 1, 'day': 30},
-                                {'month': 2, 'day': 10}, {'month': 2, 'day': 20}, {'month': 2, 'day': 28},
-                                {'month': 3, 'day': 10}, {'month': 3, 'day': 20}, {'month': 3, 'day': 30},
-                                {'month': 4, 'day': 10}, {'month': 4, 'day': 20}, {'month': 4, 'day': 30}]
+            self.issue_dates = [{'month': 1, 'day': 15}, {'month': 2, 'day': 15},
+                                {'month': 3, 'day': 15}, {'month': 4, 'day': 15}]
 
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
@@ -52,7 +50,15 @@ class ModelValidation:
         if self.sites_to_validate is None:
             self.sites_to_validate = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
                                       'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
-                                      'yampa_r_nr_maybell', 'libby_reservoir_inflow']
+                                      'yampa_r_nr_maybell', 'libby_reservoir_inflow', 'boise_r_nr_boise',
+                                      'green_r_bl_howard_a_hanson_dam', 'taylor_park_reservoir_inflow',
+                                      'dillon_reservoir_inflow', 'ruedi_reservoir_inflow',
+                                      'fontenelle_reservoir_inflow', 'weber_r_nr_oakley',
+                                      'san_joaquin_river_millerton_reservoir', 'merced_river_yosemite_at_pohono_bridge',
+                                      'american_river_folsom_lake', 'colville_r_at_kettle_falls',
+                                      'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
+                                      'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
+                                      'owyhee_r_bl_owyhee_dam']
 
         self.folder_for_plots = folder_for_plots
 
