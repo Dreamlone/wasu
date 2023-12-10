@@ -286,6 +286,9 @@ def unpack_snodas_data_into_geotiff(path_to_folder: Path, folder_to_unpack_files
 def collect_snodas_data_for_site(path_to_snodas: Path, site: str):
     """ Read prepared csv file for desired site """
     path_to_site = Path(path_to_snodas, f'{site}.csv')
+    if path_to_site.is_file() is False:
+        return None
+
     dataframe = pd.read_csv(path_to_site, parse_dates=['datetime'])
 
     return dataframe

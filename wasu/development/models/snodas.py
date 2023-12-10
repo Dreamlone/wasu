@@ -21,21 +21,19 @@ class SnodasRegression(TrainModel):
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
         self.aggregation_days = aggregation_days
-        self.base_features_columns = ['Modeled melt rate, bottom of snow layers',
-                                      'Snow accumulation, 24-hour total',
+        # Use only available data
+        self.base_features_columns = ['Snow accumulation, 24-hour total',
                                       'Non-snow accumulation, 24-hour total',
                                       'Modeled snow water equivalent, total of snow layers',
-                                      'Modeled snow layer thickness, total of snow layers',
-                                      'Modeled average temperature, SWE-weighted average of snow layers, '
-                                      '24-hour average',
-                                      'Modeled snowpack sublimation rate, 24-hour total',
-                                      'Modeled blowing snow sublimation rate, 24-hour total']
+                                      'Modeled snow layer thickness, total of snow layers']
         self.features_columns = []
         for column in self.base_features_columns:
             for agg in ['mean', 'sum', 'std']:
                 self.features_columns.append(f'{agg}_{column}')
 
         self.all_features = []
+        for column in self.features_columns:
+            self.all_features.extend([f'mean_{column}', f'sum_{column}', f'min_{column}', f'max_{column}'])
         self.statistics = []
         self.vis = False
 
@@ -52,16 +50,13 @@ class SnodasRegression(TrainModel):
         df_to_send = []
         # For every site
         for site in list(submission_format['site_id'].unique()):
-            # TODO change it back
-            site = 'hungry_horse_reservoir_inflow'
             snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
 
             submission_site = submission_format[submission_format['site_id'] == site]
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
-
             if snodas_df is None or len(snodas_df) < 1:
-                logger.warning(f'Can not obtain SNODAS data for site {site}. Apply SNOTEL repeating')
+                logger.warning(f'Can not obtain SNODAS data for site {site}. Apply SNOTEL-based model prediction')
                 submit = self.backup_model.generate_forecasts_for_site(site=site, submission_site=submission_site)
                 df_to_send.append(submit)
                 self.statistics.append([site, 'backup'])
@@ -80,7 +75,7 @@ class SnodasRegression(TrainModel):
                 df_to_send.append(submit)
                 self.statistics.append([site, 'snodas model'])
             except Exception as ex:
-                logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply SNOTEL model')
+                logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply SNOTEL-based model prediction')
                 submit = self.backup_model.generate_forecasts_for_site(site=site, submission_site=submission_site)
                 df_to_send.append(submit)
                 self.statistics.append([site, 'backup'])
@@ -111,7 +106,6 @@ class SnodasRegression(TrainModel):
             # Volume from the previous year
             known_historical_values = historical_values[historical_values['year'] < issue_date]
             known_snodas_values = snodas_df[snodas_df['julian_datetime'] < issue_date_julian]
-            known_snodas_values = known_snodas_values[['datetime', 'julian_datetime']]
 
             # Add information about year in the dataframe
             known_snodas_values['year'] = known_snodas_values['datetime'].dt.year
@@ -188,14 +182,15 @@ class SnodasRegression(TrainModel):
 
     def __aggregate_features(self, agg_snodas: pd.DataFrame):
         # Collect statistics
-        agg_snotel = agg_snodas.dropna()
+        agg_snodas = agg_snodas[self.features_columns]
+        agg_snodas = agg_snodas.dropna()
 
         dataset = pd.DataFrame()
         for feature in self.features_columns:
-            mean_value = agg_snotel[feature].mean()
-            sum_value = agg_snotel[feature].sum()
-            min_value = agg_snotel[feature].min()
-            max_value = agg_snotel[feature].max()
+            mean_value = agg_snodas[feature].mean()
+            sum_value = agg_snodas[feature].sum()
+            min_value = agg_snodas[feature].min()
+            max_value = agg_snodas[feature].max()
 
             dataset[f'mean_{feature}'] = [mean_value]
             dataset[f'sum_{feature}'] = [sum_value]

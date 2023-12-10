@@ -108,7 +108,7 @@ class SnotelFlowRegression(TrainModel):
 
     def generate_forecasts_for_site(self, site: str, submission_site: pd.DataFrame) -> pd.DataFrame:
         """ Generate SNOTEL forecast with default parameters """
-        path_to_snotel = Path(path_to_data_folder(), 'snodas')
+        path_to_snotel = Path(path_to_data_folder(), 'snotel').resolve()
         enable_spatial_aggregation = True
 
         snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=False)
