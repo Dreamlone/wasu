@@ -13,8 +13,8 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snodas():
-    collect_snodas_data_for_site(path_to_folder=Path('../../data/snodas_unpacked'),
-                                 site_id='hungry_horse_reservoir_inflow')
+    dataframe = collect_snodas_data_for_site(path_to_folder=Path('../../data/snodas_unpacked'),
+                                             site_id='hungry_horse_reservoir_inflow')
 
 
 if __name__ == '__main__':

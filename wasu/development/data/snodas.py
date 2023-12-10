@@ -136,12 +136,12 @@ def collect_snodas_data_for_site(path_to_folder: Path, site_id: str, vis: bool =
                 extract_values_by_extend_through_files(geotiff_file, site_geometry, site_id, product, date_info, vis)
 
 
-def preprocess_snodas_data(path_to_folder: Path, new_folder_name: str = 'snodas_unpacked'):
+def preprocess_snodas_data(path_to_folder: Path, folder_to_unpack_files: Path):
     info_df = []
     path_to_folder = path_to_folder.resolve()
 
     # Create folder to unpack
-    folder_to_unpack_files = Path(path_to_folder.parent, new_folder_name)
+    folder_to_unpack_files = folder_to_unpack_files.resolve()
     folder_to_unpack_files.mkdir(exist_ok=True, parents=True)
     metadata_file = Path(folder_to_unpack_files, 'metadata.csv')
 
@@ -191,21 +191,29 @@ def preprocess_snodas_data(path_to_folder: Path, new_folder_name: str = 'snodas_
             # Transform dat files into geotiff #
             ####################################
             for file in list(final_path.iterdir()):
-                if '.txt' not in file.name:
-                    continue
+                try:
+                    if '.txt' not in file.name:
+                        continue
 
-                # Transform into geotiff and save files
-                geotiff_file, product, product_code, data_units = _transform_dat_file_into_geotiff(file)
-                product = product.replace('\n', '')
-                product_code = product_code.replace('\n', '')
-                data_units = data_units.replace('\n', '')
+                    # Transform into geotiff and save files
+                    geotiff_file, product, product_code, data_units = _transform_dat_file_into_geotiff(file)
+                    product = product.replace('\n', '')
+                    product_code = product_code.replace('\n', '')
+                    data_units = data_units.replace('\n', '')
 
-                info_df.append(pd.DataFrame({'archive_name': archive.name, 'datetime': [date_info], 'product': [product],
-                                             'product_code': [product_code], 'data_units': [data_units]}))
+                    info_df.append(pd.DataFrame({'archive_name': archive.name, 'datetime': [date_info],
+                                                 'product': [product],
+                                                 'product_code': [product_code], 'data_units': [data_units],
+                                                 'geotiff': [geotiff_file]}))
+                except Exception as ex:
+                    logger.warning(f'Can not process SNODAS file {file} due to {ex}')
 
-        # Save metadata after processing one year
-        if len(info_df) > 1:
-            pd.concat(info_df).to_csv(metadata_file, index=False)
+            # After processing archive - save data
+            if len(info_df) > 1:
+                updated_df = pd.concat(info_df)
+                updated_df = pd.to_datetime(updated_df['datetime']).dt.strftime('%Y-%m-%d')
+
+                updated_df.to_csv(metadata_file, index=False)
 
     info_df = pd.concat(info_df)
     info_df.to_csv(metadata_file, index=False)

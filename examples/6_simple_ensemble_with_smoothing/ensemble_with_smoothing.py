@@ -59,7 +59,7 @@ def ensemble_from_files(path: str):
         predicted_values = np.array(predicted_values)
 
         mean_value = np.median(np.array(predicted_values))
-        adjust_ratio = 0.28
+        adjust_ratio = 0.35
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
                                 'volume_10': [np.percentile(predicted_values, 10) -
@@ -78,4 +78,4 @@ def ensemble_from_files(path: str):
 
 
 if __name__ == '__main__':
-    ensemble_from_files('results/first_ensemble_smooth_08_12_2023.csv')
+    ensemble_from_files('results/first_ensemble_smooth_09_12_2023.csv')
