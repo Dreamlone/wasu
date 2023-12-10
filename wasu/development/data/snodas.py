@@ -17,6 +17,18 @@ from shapely.geometry import mapping
 
 from wasu.development.paths import path_to_data_folder, path_to_examples_folder
 
+SITES = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
+         'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
+         'yampa_r_nr_maybell', 'libby_reservoir_inflow', 'boise_r_nr_boise',
+         'green_r_bl_howard_a_hanson_dam', 'taylor_park_reservoir_inflow',
+         'dillon_reservoir_inflow', 'ruedi_reservoir_inflow',
+         'fontenelle_reservoir_inflow', 'weber_r_nr_oakley',
+         'san_joaquin_river_millerton_reservoir', 'merced_river_yosemite_at_pohono_bridge',
+         'american_river_folsom_lake', 'colville_r_at_kettle_falls',
+         'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
+         'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
+         'owyhee_r_bl_owyhee_dam']
+
 
 def _unpack_data(archive_files: list, final_path: Path):
     ######################
@@ -80,7 +92,7 @@ def extract_values_by_extend_through_files(raster_path: Path, site_geometry, sit
     filtered_values = np.ravel(clipped_matrix)[np.ravel(clipped_matrix) > -100]
 
     if vis is True and site_id == 'hungry_horse_reservoir_inflow':
-        plots_folder = Path(path_to_examples_folder(), f'SNODAS_{site_id}')
+        plots_folder = Path(path_to_examples_folder(), f'snodas_{site_id}')
         if plots_folder.is_dir() is False:
             plots_folder.mkdir(exist_ok=True, parents=True)
 
@@ -93,11 +105,19 @@ def extract_values_by_extend_through_files(raster_path: Path, site_geometry, sit
             cmap = cm.get_cmap('Blues')
         cmap.set_bad(color='#C0C0C0')
         if product == 'Snow accumulation, 24-hour total':
-            plt.imshow(masked_array, interpolation='nearest', cmap=cmap, vmin=0, vmax=1500)
+            plt.imshow(masked_array, interpolation='nearest', cmap=cmap, vmin=0, vmax=100)
             plt.ylim(500, 700)
             plt.xlim(1250, 1430)
             plt.colorbar()
-            plt.title(product, fontsize=14)
+            plt.title(f'{product} {date_info}', fontsize=14)
+            plt.savefig(Path(plots_folder, f'{product}_{date_info}.png'))
+            plt.close()
+        elif product == 'Modeled average temperature, SWE-weighted average of snow layers, 24-hour average':
+            plt.imshow(masked_array, interpolation='nearest', cmap=cmap, vmin=250, vmax=300)
+            plt.ylim(500, 700)
+            plt.xlim(1250, 1430)
+            plt.colorbar()
+            plt.title(f'{product} {date_info}', fontsize=14)
             plt.savefig(Path(plots_folder, f'{product}_{date_info}.png'))
             plt.close()
         else:
@@ -106,37 +126,81 @@ def extract_values_by_extend_through_files(raster_path: Path, site_geometry, sit
     return filtered_values
 
 
-def collect_snodas_data_for_site(path_to_folder: Path, site_id: str, vis: bool = False):
-    """ Collect SNODAS data for desired site """
+def prepare_snodas_data(path_to_folder: Path, folder_for_csv: Path, vis: bool = False):
+    """
+    STAGE 2
+    Transform SNODAS data per sites: extract values and calculate statistics and save results as csv files
+    """
+    folder_for_csv = folder_for_csv.resolve()
+    folder_for_csv.mkdir(exist_ok=True, parents=True)
+
     # First - get information about site extend
     spatial_objects = geopandas.read_file(Path(path_to_data_folder(), 'geospatial.gpkg'))
-    spatial_objects = spatial_objects[spatial_objects['site_id'] == site_id]
-    site_geometry = spatial_objects.geometry[0]
     metadata_file = Path(path_to_folder, 'metadata.csv')
 
     metadata_df = pd.read_csv(metadata_file, parse_dates=['datetime'])
     metadata_df = metadata_df.sort_values(by='datetime')
 
-    path_to_folder = path_to_folder.resolve()
-
-    all_years = list(path_to_folder.iterdir())
-    all_years.sort()
-    for year_folder in all_years:
-        if len(list(year_folder.iterdir())) < 1:
-            # Skip empty folders
+    for site_id in SITES:
+        site_name_df = Path(folder_for_csv, f'{site_id}.csv')
+        if site_name_df.is_file() is True:
+            logger.info(f'Skip collecting data for site {site_id} because it is already stored')
             continue
 
-        for date_label in list(year_folder.iterdir()):
-            date_info = date_label.name.split('_')[1]
-            date_info = datetime.datetime.strptime(date_info, '%Y%m%d')
-            logger.debug(f'Read SNODAS from geotiff files for datetime {date_info}')
+        # Prepare data for every site
+        site_geom = spatial_objects[spatial_objects['site_id'] == site_id]
+        if len(site_geom) < 1:
+            logger.info(f'Skip site {site_id} because there is no geometry data for it')
+            continue
 
-            # Read geotiff files
-            for geotiff_file in list(date_label.iterdir()):
-                extract_values_by_extend_through_files(geotiff_file, site_geometry, site_id, product, date_info, vis)
+        site_geometry = site_geom.geometry.values[0]
+
+        all_info_per_site = []
+        for date_info in list(metadata_df['datetime'].unique()):
+            try:
+                date_df = metadata_df[metadata_df['datetime'] == date_info]
+                logger.debug(f'Site: {site_id}, Assimilate geotiff files for {date_info}')
+
+                datetime_site_df = pd.DataFrame({'datetime': [date_info]})
+                for row_id, row in date_df.iterrows():
+                    geotiff_file = row.geotiff
+                    product_name = row['product']
+                    # Product melt rate
+                    if product_name == 'Modeled melt rate, bottom of snow layers, 24-hour total':
+                        product_name = 'Modeled melt rate, bottom of snow layers'
+
+                    # Snow accumulation
+                    if product_name == 'Scaled Snow accumulation, 24-hour total':
+                        product_name = 'Snow accumulation, 24-hour total'
+                    if product_name == 'Scaled Snow accumulation 3 hour forecast, 24-hour total':
+                        product_name = 'Snow accumulation, 24-hour total'
+
+                    # Non snow accumulation
+                    if product_name == 'Scaled Non-snow accumulation, 24-hour total':
+                        product_name = 'Non-snow accumulation, 24-hour total'
+                    if product_name == 'Scaled Non-snow accumulation 3 hour forecast, 24-hour total':
+                        product_name = 'Non-snow accumulation, 24-hour total'
+
+                    vals = extract_values_by_extend_through_files(geotiff_file, site_geometry, site_id, product_name,
+                                                                  date_info, vis)
+                    # Calculate statistics for current datetime
+                    datetime_site_df[f'mean_{product_name}'] = np.nanmean(vals)
+                    datetime_site_df[f'sum_{product_name}'] = np.nansum(vals)
+                    datetime_site_df[f'std_{product_name}'] = np.nanstd(vals)
+
+                all_info_per_site.append(datetime_site_df)
+            except Exception as ex:
+                logger.warning(F'Can not assimilate data due to {ex}. Skip')
+
+        all_info_per_site = pd.concat(all_info_per_site)
+        all_info_per_site.to_csv(site_name_df, index=False)
 
 
 def preprocess_snodas_data(path_to_folder: Path, folder_to_unpack_files: Path):
+    """
+    STAGE 1
+    Unpack archives with SNODAS data and save results into new folder with geotiff files
+    """
     info_df = []
     path_to_folder = path_to_folder.resolve()
 

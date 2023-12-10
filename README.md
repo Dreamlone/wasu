@@ -109,16 +109,19 @@ Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 Modeled snow layer thickness, total of snow layers
 
 Data from SNODAS files:
-- Scaled Non-snow accumulation, 24-hour total
-- Scaled Snow accumulation, 24-hour total
+- Non-snow accumulation, 24-hour total
+- Snow accumulation, 24-hour total
 - Modeled snow layer thickness, total of snow layers
 - Modeled average temperature, SWE-weighted average of snow layers, 24-hour average
 - Modeled blowing snow sublimation, 24-hour total
 - Modeled melt, bottom of snow layers, 24-hour total
 - Modeled snowpack sublimation, 24-hour total
 
-## Additional dependencies 
+Data preprocessing for SNODAS is divided into two steps: 
 
-```bash
-sudo apt install gdal-bin
-```
+1. **Archive unpacking**: Archives with `.dat` and `.txt` files are transformed into geotiff files
+2. **Data extraction**: For each site id and for each datetime stamp, information is extracted and written as a `.csv` file
+
+![snow_accumulation.gif](docs%2Fimages%2Fsnow_accumulation.gif)
+
+Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`. Units: `Kilograms per square meter / 10`
