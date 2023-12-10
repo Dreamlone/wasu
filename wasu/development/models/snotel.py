@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from loguru import logger
 from pandas import Timestamp
@@ -10,6 +9,7 @@ from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
 from wasu.development.models.repeating import AdvancedRepeatingTrainModel
 from wasu.development.models.train_model import TrainModel
+from wasu.development.paths import path_to_data_folder
 
 
 class SnotelFlowRegression(TrainModel):
@@ -105,6 +105,38 @@ class SnotelFlowRegression(TrainModel):
 
         df_to_send = pd.concat(df_to_send)
         return df_to_send
+
+    def generate_forecasts_for_site(self, site: str, submission_site: pd.DataFrame) -> pd.DataFrame:
+        """ Generate SNOTEL forecast with default parameters """
+        path_to_snotel = Path(path_to_data_folder(), 'snodas')
+        enable_spatial_aggregation = True
+
+        snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=False)
+
+        site_df = self.train_df[self.train_df['site_id'] == site]
+        site_df = site_df.sort_values(by='year')
+
+        if snotel_df is None or len(snotel_df) < 1:
+            logger.warning(f'Can not obtain SNOTEL data for site {site}. Apply Advanced repeating')
+            submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
+                                                                   submission_site=submission_site)
+            return submit
+
+        try:
+            if enable_spatial_aggregation is not None and enable_spatial_aggregation is True:
+                snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
+                                                           'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
+                                                           'WTEQ_DAILY': 'mean'})
+                snotel_df = snotel_df.reset_index()
+                snotel_df = snotel_df.dropna()
+            submit = self._generate_forecasts_for_site(historical_values=site_df, snotel_df=snotel_df,
+                                                       submission_site=submission_site, site_id=site)
+            return submit
+        except Exception as ex:
+            logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
+            submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
+                                                                   submission_site=submission_site)
+            return submit
 
     def _generate_forecasts_for_site(self, historical_values: pd.DataFrame,
                                      snotel_df: pd.DataFrame, submission_site: pd.DataFrame, site_id: str):

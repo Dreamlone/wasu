@@ -1,14 +1,13 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from loguru import logger
 from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 
-from wasu.development.data.snotel import collect_snotel_data_for_site
+from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
-from wasu.development.models.repeating import AdvancedRepeatingTrainModel
+from wasu.development.models.snotel import SnotelFlowRegression
 from wasu.development.models.train_model import TrainModel
 
 
@@ -17,40 +16,35 @@ class SnodasRegression(TrainModel):
 
     def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90):
         super().__init__(train_df)
-        self.backup_model = AdvancedRepeatingTrainModel(train_df)
+        self.backup_model = SnotelFlowRegression(train_df, aggregation_days=50)
 
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
-        # One month
         self.aggregation_days = aggregation_days
-        self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
-                                 'mean_WTEQ_DAILY',
-                                 'sum_PREC_DAILY', 'sum_TAVG_DAILY', 'sum_TMAX_DAILY', 'sum_TMIN_DAILY',
-                                 'sum_WTEQ_DAILY',
-                                 'max_PREC_DAILY', 'max_TAVG_DAILY', 'max_TMAX_DAILY', 'max_TMIN_DAILY',
-                                 'max_WTEQ_DAILY',
-                                 'min_PREC_DAILY', 'min_TAVG_DAILY', 'min_TMAX_DAILY', 'min_TMIN_DAILY',
-                                 'min_WTEQ_DAILY']
+        self.base_features_columns = ['Modeled melt rate, bottom of snow layers',
+                                      'Snow accumulation, 24-hour total',
+                                      'Non-snow accumulation, 24-hour total',
+                                      'Modeled snow water equivalent, total of snow layers',
+                                      'Modeled snow layer thickness, total of snow layers',
+                                      'Modeled average temperature, SWE-weighted average of snow layers, '
+                                      '24-hour average',
+                                      'Modeled snowpack sublimation rate, 24-hour total',
+                                      'Modeled blowing snow sublimation rate, 24-hour total']
+        self.features_columns = []
+        for column in self.base_features_columns:
+            for agg in ['mean', 'sum', 'std']:
+                self.features_columns.append(f'{agg}_{column}')
 
+        self.all_features = []
         self.statistics = []
         self.vis = False
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """ Make predictions based on SNOTEL data
-
-        :param submission_format: pandas  table with example of output
-        :param kwargs: additional parameters
-            - enable_spatial_aggregation - aggregated data from all stations per datetime label or not
-            - collect_only_in_basin - is there a need to use only stations which is included in the basin of site or all
-        """
+        """ Make predictions based on SNODAS data """
         self.train_df = self.train_df.dropna()
 
         metadata: pd.DataFrame = kwargs['metadata']
-        path_to_snotel: Path = kwargs['path_to_snotel']
-        enable_spatial_aggregation: Path = kwargs.get('enable_spatial_aggregation')
-        collect_only_in_basin = kwargs.get('collect_only_in_basin')
-        if collect_only_in_basin is None:
-            collect_only_in_basin = True
+        path_to_snodas: Path = kwargs['path_to_snodas']
         self.vis: bool = kwargs.get('vis')
         if self.vis is None:
             self.vis = False
@@ -58,16 +52,17 @@ class SnodasRegression(TrainModel):
         df_to_send = []
         # For every site
         for site in list(submission_format['site_id'].unique()):
-            snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=collect_only_in_basin)
+            # TODO change it back
+            site = 'hungry_horse_reservoir_inflow'
+            snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
 
             submission_site = submission_format[submission_format['site_id'] == site]
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
 
-            if snotel_df is None or len(snotel_df) < 1:
-                logger.warning(f'Can not obtain SNOTEL data for site {site}. Apply Advanced repeating')
-                submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                       submission_site=submission_site)
+            if snodas_df is None or len(snodas_df) < 1:
+                logger.warning(f'Can not obtain SNODAS data for site {site}. Apply SNOTEL repeating')
+                submit = self.backup_model.generate_forecasts_for_site(site=site, submission_site=submission_site)
                 df_to_send.append(submit)
                 self.statistics.append([site, 'backup'])
                 continue
@@ -80,23 +75,13 @@ class SnodasRegression(TrainModel):
                         f'End season month: {season_end_month}')
 
             try:
-                if enable_spatial_aggregation is not None and enable_spatial_aggregation is True:
-                    # Calculate mean values per basin
-                    logger.info(f'Len before aggregation: {len(snotel_df)}')
-                    snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
-                                                               'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
-                                                               'WTEQ_DAILY': 'mean'})
-                    snotel_df = snotel_df.reset_index()
-                    logger.info(f'Len after aggregation: {len(snotel_df)}')
-                    snotel_df = snotel_df.dropna()
-                submit = self._generate_forecasts_for_site(historical_values=site_df, snotel_df=snotel_df,
+                submit = self._generate_forecasts_for_site(historical_values=site_df, snodas_df=snodas_df,
                                                            submission_site=submission_site, site_id=site)
                 df_to_send.append(submit)
-                self.statistics.append([site, 'snotel model'])
+                self.statistics.append([site, 'snodas model'])
             except Exception as ex:
-                logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
-                submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                       submission_site=submission_site)
+                logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply SNOTEL model')
+                submit = self.backup_model.generate_forecasts_for_site(site=site, submission_site=submission_site)
                 df_to_send.append(submit)
                 self.statistics.append([site, 'backup'])
 
@@ -107,8 +92,8 @@ class SnodasRegression(TrainModel):
         return df_to_send
 
     def _generate_forecasts_for_site(self, historical_values: pd.DataFrame,
-                                     snotel_df: pd.DataFrame, submission_site: pd.DataFrame, site_id: str):
-        snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
+                                     snodas_df: pd.DataFrame, submission_site: pd.DataFrame, site_id: str):
+        snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
                                                   julian_column='julian_datetime', round_julian=3)
 
         submit = []
@@ -125,26 +110,25 @@ class SnodasRegression(TrainModel):
 
             # Volume from the previous year
             known_historical_values = historical_values[historical_values['year'] < issue_date]
-            known_snotel_values = snotel_df[snotel_df['julian_datetime'] < issue_date_julian]
-            known_snotel_values = known_snotel_values[['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY',
-                                                       'TMIN_DAILY', 'WTEQ_DAILY', 'date', 'julian_datetime']]
+            known_snodas_values = snodas_df[snodas_df['julian_datetime'] < issue_date_julian]
+            known_snodas_values = known_snodas_values[['datetime', 'julian_datetime']]
 
             # Add information about year in the dataframe
-            known_snotel_values['year'] = known_snotel_values['date'].dt.year
+            known_snodas_values['year'] = known_snodas_values['datetime'].dt.year
             known_historical_values['year_number'] = known_historical_values['year'].dt.year
 
             # Fit model
             model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
-                                                                                     known_snotel_values=known_snotel_values,
+                                                                                     known_snodas_values=known_snodas_values,
                                                                                      issue_date=issue_date,
                                                                                      site_id=site_id)
 
             # Generate forecast
-            agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= issue_date_agg_start_julian]
-            agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < issue_date_julian]
-            dataset = self.__aggregate_features(agg_snotel)
+            agg_snodas = known_snodas_values[known_snodas_values['julian_datetime'] >= issue_date_agg_start_julian]
+            agg_snodas = agg_snodas[agg_snodas['julian_datetime'] < issue_date_julian]
+            dataset = self.__aggregate_features(agg_snodas)
 
-            predicted = model.predict(dataset[self.features_columns])[0]
+            predicted = model.predict(dataset[self.all_features])[0]
 
             # Clip to borders
             if predicted > max_target:
@@ -162,17 +146,17 @@ class SnodasRegression(TrainModel):
         return submit
 
     def _fit_model_based_on_historical_data(self, known_historical_values: pd.DataFrame,
-                                            known_snotel_values: pd.DataFrame,
+                                            known_snodas_values: pd.DataFrame,
                                             issue_date: Timestamp,
                                             site_id: str):
 
         dataframe_for_model_fitting = []
         for historical_year in list(known_historical_values['year'].dt.year):
             # For each year in the past collect data for model fitting
-            if historical_year not in list(known_snotel_values['year'].unique()):
+            if historical_year not in list(known_snodas_values['year'].unique()):
                 continue
             # One year in advance for aggregation
-            if historical_year - 1 not in list(known_snotel_values['year'].unique()):
+            if historical_year - 1 not in list(known_snodas_values['year'].unique()):
                 continue
 
             # Find that day in the past (and min and max borders for data aggregation)
@@ -181,10 +165,10 @@ class SnodasRegression(TrainModel):
             aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date, offset_years=years_offset,
                                                                      offset_days=self.aggregation_days)
 
-            agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= aggregation_start_julian]
-            agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < aggregation_end_julian]
+            agg_snodas = known_snodas_values[known_snodas_values['julian_datetime'] >= aggregation_start_julian]
+            agg_snodas = agg_snodas[agg_snodas['julian_datetime'] < aggregation_end_julian]
 
-            dataset = self.__aggregate_features(agg_snotel)
+            dataset = self.__aggregate_features(agg_snodas)
 
             # Add target (for prediction)
             historical_data_for_year = known_historical_values[known_historical_values['year_number'] == historical_year]
@@ -198,17 +182,16 @@ class SnodasRegression(TrainModel):
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
         reg = RandomForestRegressor(n_estimators=40)
-        reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
+        reg.fit(dataframe_for_model_fitting[self.all_features], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target
 
-    @staticmethod
-    def __aggregate_features(agg_snotel: pd.DataFrame):
+    def __aggregate_features(self, agg_snodas: pd.DataFrame):
         # Collect statistics
-        agg_snotel = agg_snotel.dropna()
+        agg_snotel = agg_snodas.dropna()
 
         dataset = pd.DataFrame()
-        for feature in ['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY']:
+        for feature in self.features_columns:
             mean_value = agg_snotel[feature].mean()
             sum_value = agg_snotel[feature].sum()
             min_value = agg_snotel[feature].min()

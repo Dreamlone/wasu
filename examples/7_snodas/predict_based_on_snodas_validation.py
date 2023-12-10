@@ -5,7 +5,6 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.snodas import SnodasRegression
-from wasu.development.models.streamflow import StreamFlowRegression
 from wasu.development.validation import ModelValidation
 
 warnings.filterwarnings('ignore')
@@ -18,13 +17,13 @@ def generate_forecast_based_on_snodas():
 
     # Load dataframe with metadata
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
-    path_to_streamflow = Path('../../data/usgs_streamflow').resolve()
+    path_to_snodas = Path('../../data/snodas_csv').resolve()
 
-    model = SnodasRegression(train_df=train_df, aggregation_days=30)
-    predicted = model.predict(submission_format, metadata=metadata, path_to_streamflow=path_to_streamflow, vis=False)
+    model = SnodasRegression(train_df=train_df, aggregation_days=90)
+    predicted = model.predict(submission_format, metadata=metadata, path_to_snodas=path_to_snodas, vis=False)
 
     validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted, path='./validation/usgs_streamflow_30.csv',
+    model.save_predictions_as_submit(predicted, path='./validation/snodas_90.csv',
                                      submission_format=submission_format)
 
 

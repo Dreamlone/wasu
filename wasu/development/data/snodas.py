@@ -126,7 +126,7 @@ def extract_values_by_extend_through_files(raster_path: Path, site_geometry, sit
     return filtered_values
 
 
-def prepare_snodas_data(path_to_folder: Path, folder_for_csv: Path, vis: bool = False):
+def extract_data_from_geotiff_files_into_csv(path_to_folder: Path, folder_for_csv: Path, vis: bool = False):
     """
     STAGE 2
     Transform SNODAS data per sites: extract values and calculate statistics and save results as csv files
@@ -196,7 +196,7 @@ def prepare_snodas_data(path_to_folder: Path, folder_for_csv: Path, vis: bool = 
         all_info_per_site.to_csv(site_name_df, index=False)
 
 
-def preprocess_snodas_data(path_to_folder: Path, folder_to_unpack_files: Path):
+def unpack_snodas_data_into_geotiff(path_to_folder: Path, folder_to_unpack_files: Path):
     """
     STAGE 1
     Unpack archives with SNODAS data and save results into new folder with geotiff files
@@ -281,3 +281,11 @@ def preprocess_snodas_data(path_to_folder: Path, folder_to_unpack_files: Path):
 
     info_df = pd.concat(info_df)
     info_df.to_csv(metadata_file, index=False)
+
+
+def collect_snodas_data_for_site(path_to_snodas: Path, site: str):
+    """ Read prepared csv file for desired site """
+    path_to_site = Path(path_to_snodas, f'{site}.csv')
+    dataframe = pd.read_csv(path_to_site, parse_dates=['datetime'])
+
+    return dataframe
