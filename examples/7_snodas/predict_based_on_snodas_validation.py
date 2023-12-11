@@ -19,11 +19,11 @@ def generate_forecast_based_on_snodas():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snodas = Path('../../data/snodas_csv').resolve()
 
-    model = SnodasRegression(train_df=train_df, aggregation_days=50)
+    model = SnodasRegression(train_df=train_df, aggregation_days=180)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snodas=path_to_snodas, vis=False)
 
     validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted, path='./validation/snodas_50.csv',
+    model.save_predictions_as_submit(predicted, path='./validation/snodas_180.csv',
                                      submission_format=submission_format)
 
 

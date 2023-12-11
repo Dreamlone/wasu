@@ -43,7 +43,7 @@ def ensemble_from_files():
                          #'../3_streamflow/validation/usgs_streamflow_100.csv',
                          #'../3_streamflow/validation/usgs_streamflow_180.csv',
                          #'../4_snotel/validation/snotel_25_basin.csv',
-                         '../7_snodas/validation/snodas_50.csv',
+                         '../7_snodas/validation/snodas_180.csv',
                          '../4_snotel/validation/snotel_50_basin.csv',
                          #'../4_snotel/validation/snotel_80_all_stations.csv',
                          #'../4_snotel/validation/snotel_80_basin.csv',

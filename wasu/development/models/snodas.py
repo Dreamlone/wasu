@@ -4,6 +4,7 @@ import pandas as pd
 from loguru import logger
 from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import PolynomialFeatures
 
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
@@ -122,7 +123,7 @@ class SnodasRegression(TrainModel):
             agg_snodas = agg_snodas[agg_snodas['julian_datetime'] < issue_date_julian]
             dataset = self.__aggregate_features(agg_snodas)
 
-            predicted = model.predict(dataset[self.all_features])[0]
+            predicted = model.predict(PolynomialFeatures(degree=3).fit_transform(dataset[self.all_features]))[0]
 
             # Clip to borders
             if predicted > max_target:
@@ -176,7 +177,7 @@ class SnodasRegression(TrainModel):
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
         reg = RandomForestRegressor(n_estimators=40)
-        reg.fit(dataframe_for_model_fitting[self.all_features], dataframe_for_model_fitting['target'])
+        reg.fit(PolynomialFeatures(degree=3).fit_transform(dataframe_for_model_fitting[self.all_features]), dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target
 
