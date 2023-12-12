@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snodas():
-    validator = ModelValidation(folder_for_plots='snodas_validation')
+    validator = ModelValidation(folder_for_plots='snodas')
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     submission_format = validator.generate_submission_format()
 

@@ -201,10 +201,10 @@ class SnodasRegression(TrainModel):
         dayofyear = issue_date.dayofyear
 
         if 0 <= dayofyear <= 30:
-            return 90
+            return 60
         elif 30 < dayofyear <= 60:
-            return 125
+            return 115
         elif 60 < dayofyear <= 90:
-            return 110
+            return 150
         else:
             return 150

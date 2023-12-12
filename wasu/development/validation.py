@@ -41,24 +41,28 @@ class ModelValidation:
 
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
-            self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
+            # self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
+            self.years_to_validate = [2012, 2014, 2016, 2018, 2020]
         else:
             if len(set(self.years_to_validate).intersection(test_years)) > 0:
                 raise ValueError(f'Can not validate if the year is in test data: {test_years}')
 
         self.sites_to_validate = sites_to_validate
         if self.sites_to_validate is None:
+            # self.sites_to_validate = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
+            #                           'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
+            #                           'yampa_r_nr_maybell', 'libby_reservoir_inflow', 'boise_r_nr_boise',
+            #                           'green_r_bl_howard_a_hanson_dam', 'taylor_park_reservoir_inflow',
+            #                           'dillon_reservoir_inflow', 'ruedi_reservoir_inflow',
+            #                           'fontenelle_reservoir_inflow', 'weber_r_nr_oakley',
+            #                           'san_joaquin_river_millerton_reservoir', 'merced_river_yosemite_at_pohono_bridge',
+            #                           'american_river_folsom_lake', 'colville_r_at_kettle_falls',
+            #                           'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
+            #                           'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
+            #                           'owyhee_r_bl_owyhee_dam']
             self.sites_to_validate = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
                                       'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
-                                      'yampa_r_nr_maybell', 'libby_reservoir_inflow', 'boise_r_nr_boise',
-                                      'green_r_bl_howard_a_hanson_dam', 'taylor_park_reservoir_inflow',
-                                      'dillon_reservoir_inflow', 'ruedi_reservoir_inflow',
-                                      'fontenelle_reservoir_inflow', 'weber_r_nr_oakley',
-                                      'san_joaquin_river_millerton_reservoir', 'merced_river_yosemite_at_pohono_bridge',
-                                      'american_river_folsom_lake', 'colville_r_at_kettle_falls',
-                                      'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
-                                      'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
-                                      'owyhee_r_bl_owyhee_dam']
+                                      'yampa_r_nr_maybell', 'libby_reservoir_inflow']
 
         self.folder_for_plots = folder_for_plots
 
