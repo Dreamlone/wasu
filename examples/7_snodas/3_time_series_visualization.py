@@ -5,18 +5,20 @@ import warnings
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.paths import path_to_plots_folder
 
 warnings.filterwarnings('ignore')
 
 
 def show_time_series(site_id: str):
+    snotel_df = collect_snotel_data_for_site(path_to_folder=Path('../../data/snotel'), site_id=site_id,
+                                             collect_only_in_basin=True)
+    snotel_df = snotel_df.drop_duplicates()
+
     plots_folder = Path(path_to_plots_folder(), 'snodas_investigation')
     plots_folder.mkdir(exist_ok=True, parents=True)
-    basic_features = ['Snow accumulation, 24-hour total',
-                      'Non-snow accumulation, 24-hour total',
-                      'Modeled snow water equivalent, total of snow layers',
-                      'Modeled snow layer thickness, total of snow layers']
+    basic_features = ['Modeled snow water equivalent, total of snow layers']
 
     # Read real flow values
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
@@ -29,7 +31,7 @@ def show_time_series(site_id: str):
     df = df.sort_values(by='datetime')
 
     for column in basic_features:
-        for agg in ['mean', 'sum', 'std']:
+        for agg in ['mean']:
             column_name = f'{agg}_{column}'
 
             fig_size = (17.0, 6.0)
@@ -37,7 +39,10 @@ def show_time_series(site_id: str):
             ax1.set_xlabel('Datetime')
             ax1.set_ylabel(column)
             ax1.plot(df['datetime'], df[column_name], color='blue')
+            ax1.scatter(snotel_df['date'], snotel_df['WTEQ_DAILY'], color='black', s=1,
+                        label='SNOTEL data from several stations')
             ax1.tick_params(axis='y')
+            plt.legend(loc='upper left')
             plt.grid(c='#DCDCDC')
 
             ax2 = ax1.twinx()

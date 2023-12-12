@@ -229,7 +229,7 @@ class SnotelFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=40)
+        reg = RandomForestRegressor(n_estimators=40, random_state=2023)
         reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target

@@ -4,7 +4,6 @@ import pandas as pd
 from loguru import logger
 from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import PolynomialFeatures
 
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
@@ -15,13 +14,12 @@ from wasu.development.models.train_model import TrainModel
 class SnodasRegression(TrainModel):
     """ Create forecasts based on SNODAS data """
 
-    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90):
+    def __init__(self, train_df: pd.DataFrame):
         super().__init__(train_df)
-        self.backup_model = SnotelFlowRegression(train_df, aggregation_days=50)
+        self.backup_model = SnotelFlowRegression(train_df, aggregation_days=180)
 
         self.lower_ratio = 0.3
         self.above_ratio = 0.3
-        self.aggregation_days = aggregation_days
         # Use only available data
         self.base_features_columns = ['Snow accumulation, 24-hour total',
                                       'Non-snow accumulation, 24-hour total',
@@ -29,12 +27,11 @@ class SnodasRegression(TrainModel):
                                       'Modeled snow layer thickness, total of snow layers']
         self.features_columns = []
         for column in self.base_features_columns:
-            for agg in ['mean', 'sum', 'std']:
-                self.features_columns.append(f'{agg}_{column}')
+            self.features_columns.append(f'mean_{column}')
 
         self.all_features = []
         for column in self.features_columns:
-            self.all_features.extend([f'mean_{column}', f'sum_{column}', f'min_{column}', f'max_{column}'])
+            self.all_features.extend([f'mean_{column}', f'min_{column}', f'max_{column}'])
         self.statistics = []
         self.vis = False
 
@@ -101,8 +98,9 @@ class SnodasRegression(TrainModel):
             # Get information about datetime
             issue_date = row['issue_date']
             issue_date_julian = get_julian_date_from_datetime(current_date=issue_date, round_julian=3)
+            aggregation_days = self._choose_aggregation_period_based_of_the_day_of_year(issue_date)
             issue_date_agg_start_julian = get_julian_date_from_datetime(current_date=issue_date,
-                                                                        offset_days=self.aggregation_days)
+                                                                        offset_days=aggregation_days)
 
             # Volume from the previous year
             known_historical_values = historical_values[historical_values['year'] < issue_date]
@@ -123,7 +121,7 @@ class SnodasRegression(TrainModel):
             agg_snodas = agg_snodas[agg_snodas['julian_datetime'] < issue_date_julian]
             dataset = self.__aggregate_features(agg_snodas)
 
-            predicted = model.predict(PolynomialFeatures(degree=3).fit_transform(dataset[self.all_features]))[0]
+            predicted = model.predict(dataset[self.all_features])[0]
 
             # Clip to borders
             if predicted > max_target:
@@ -156,9 +154,10 @@ class SnodasRegression(TrainModel):
 
             # Find that day in the past (and min and max borders for data aggregation)
             years_offset = issue_date.year - historical_year
+            aggregation_days = self._choose_aggregation_period_based_of_the_day_of_year(issue_date)
             aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date, offset_years=years_offset)
             aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date, offset_years=years_offset,
-                                                                     offset_days=self.aggregation_days)
+                                                                     offset_days=aggregation_days)
 
             agg_snodas = known_snodas_values[known_snodas_values['julian_datetime'] >= aggregation_start_julian]
             agg_snodas = agg_snodas[agg_snodas['julian_datetime'] < aggregation_end_julian]
@@ -176,8 +175,8 @@ class SnodasRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=40)
-        reg.fit(PolynomialFeatures(degree=3).fit_transform(dataframe_for_model_fitting[self.all_features]), dataframe_for_model_fitting['target'])
+        reg = RandomForestRegressor(n_estimators=50, random_state=2023)
+        reg.fit(dataframe_for_model_fitting[self.all_features], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target
 
@@ -189,13 +188,23 @@ class SnodasRegression(TrainModel):
         dataset = pd.DataFrame()
         for feature in self.features_columns:
             mean_value = agg_snodas[feature].mean()
-            sum_value = agg_snodas[feature].sum()
             min_value = agg_snodas[feature].min()
             max_value = agg_snodas[feature].max()
 
             dataset[f'mean_{feature}'] = [mean_value]
-            dataset[f'sum_{feature}'] = [sum_value]
             dataset[f'min_{feature}'] = [min_value]
             dataset[f'max_{feature}'] = [max_value]
 
         return dataset
+
+    def _choose_aggregation_period_based_of_the_day_of_year(self, issue_date: Timestamp):
+        dayofyear = issue_date.dayofyear
+
+        if 0 <= dayofyear <= 30:
+            return 90
+        elif 30 < dayofyear <= 60:
+            return 125
+        elif 60 < dayofyear <= 90:
+            return 110
+        else:
+            return 150

@@ -37,8 +37,8 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 def ensemble_from_files(path: str):
     """ Collect predictions from the files and collect information about them into one prediction """
-    files_to_ensemble = ['../4_snotel/results/snotel_50_basin.csv',
-                         '../7_snodas/results/snodas_180.csv',
+    files_to_ensemble = ['../4_snotel/results/period_100_snotel_all_stations.csv',
+                         '../7_snodas/results/snodas.csv',
                          '../4_snotel/results/snotel_180_all_stations.csv']
 
     # Load tables from csv files
@@ -78,4 +78,4 @@ def ensemble_from_files(path: str):
 
 
 if __name__ == '__main__':
-    ensemble_from_files('results/first_ensemble_smooth_10_12_2023.csv')
+    ensemble_from_files('results/snow_ensemble_11_12_2023.csv')
