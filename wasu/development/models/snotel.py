@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from lightgbm import LGBMRegressor
 from loguru import logger
 from pandas import Timestamp
-from sklearn.ensemble import RandomForestRegressor
 
 from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
@@ -19,8 +20,6 @@ class SnotelFlowRegression(TrainModel):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
-        self.lower_ratio = 0.3
-        self.above_ratio = 0.3
         # One month
         self.aggregation_days = aggregation_days
         self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
@@ -165,28 +164,33 @@ class SnotelFlowRegression(TrainModel):
             known_snotel_values['year'] = known_snotel_values['date'].dt.year
             known_historical_values['year_number'] = known_historical_values['year'].dt.year
 
-            # Fit model
-            model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
-                                                                                     known_snotel_values=known_snotel_values,
-                                                                                     issue_date=issue_date,
-                                                                                     site_id=site_id)
+            # Fit model for each interval
+            for alpha in [0.1, 0.5, 0.9]:
+                model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
+                                                                                         known_snotel_values=known_snotel_values,
+                                                                                         issue_date=issue_date,
+                                                                                         site_id=site_id, alpha=alpha)
 
-            # Generate forecast
-            agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= issue_date_agg_start_julian]
-            agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < issue_date_julian]
-            dataset = self.__aggregate_features(agg_snotel)
+                # Generate forecast
+                agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= issue_date_agg_start_julian]
+                agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < issue_date_julian]
+                dataset = self.__aggregate_features(agg_snotel)
 
-            predicted = model.predict(dataset[self.features_columns])[0]
+                predicted = model.predict(dataset[self.features_columns])[0]
 
-            # Clip to borders
-            if predicted > max_target:
-                predicted = max_target
-            if predicted < min_target:
-                predicted = min_target
+                if alpha == 0.5:
+                    # Fix predicted value
+                    if predicted > max_target:
+                        predicted = max_target
+                    if predicted < min_target:
+                        predicted = min_target
 
-            row['volume_10'] = predicted - (predicted * self.lower_ratio)
-            row['volume_50'] = predicted
-            row['volume_90'] = predicted + (predicted * self.above_ratio)
+                if alpha == 0.1:
+                    row['volume_10'] = predicted
+                elif alpha == 0.5:
+                    row['volume_50'] = predicted
+                else:
+                    row['volume_90'] = predicted
 
             submit.append(pd.DataFrame(row).T)
 
@@ -196,7 +200,8 @@ class SnotelFlowRegression(TrainModel):
     def _fit_model_based_on_historical_data(self, known_historical_values: pd.DataFrame,
                                             known_snotel_values: pd.DataFrame,
                                             issue_date: Timestamp,
-                                            site_id: str):
+                                            site_id: str,
+                                            alpha: float):
 
         dataframe_for_model_fitting = []
         for historical_year in list(known_historical_values['year'].dt.year):
@@ -229,8 +234,10 @@ class SnotelFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=40, random_state=2023)
-        reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
+        reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
+                            min_data_in_leaf=2, min_child_samples=2, verbose=-1)
+        reg.fit(np.array(dataframe_for_model_fitting[self.features_columns]),
+                np.array(dataframe_for_model_fitting['target']))
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target
 

@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import pandas as pd
+from lightgbm import LGBMRegressor
 from loguru import logger
 from pandas import Timestamp
-from sklearn.ensemble import RandomForestRegressor
 
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
@@ -175,7 +175,7 @@ class SnodasRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=50, random_state=2023)
+        reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=0.5)
         reg.fit(dataframe_for_model_fitting[self.all_features], dataframe_for_model_fitting['target'])
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         return reg, min_target, max_target

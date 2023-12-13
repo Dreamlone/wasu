@@ -670,6 +670,30 @@ files = [
 ]
 
 [[package]]
+name = "lightgbm"
+version = "4.1.0"
+description = "LightGBM Python Package"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "lightgbm-4.1.0-py3-none-macosx_10_15_x86_64.macosx_11_6_x86_64.macosx_12_5_x86_64.whl", hash = "sha256:f5794ab83ea5df5329675661e90e40dcfdabca844c801c351204f005fd44b31c"},
+    {file = "lightgbm-4.1.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:52023ca78e7584658b4024b8d08fa5b4cb83c469d6e3c78806b15d1867db586c"},
+    {file = "lightgbm-4.1.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:47578cff4bc8116b62adc02437bf2b49dcc7ad4e8e3dd8dad3fe88e694d74d93"},
+    {file = "lightgbm-4.1.0-py3-none-win_amd64.whl", hash = "sha256:384be334d7d8c76ce3894844c6487d788c7259a94c4710114ae6feaaa47dc29e"},
+    {file = "lightgbm-4.1.0.tar.gz", hash = "sha256:bee59dd269a93b093f2c610d4a6683a7ea87c63d3ea35c622123ce2c020b2abc"},
+]
+
+[package.dependencies]
+numpy = "*"
+scipy = "*"
+
+[package.extras]
+dask = ["dask[array,dataframe,distributed] (>=2.0.0)", "pandas (>=0.24.0)"]
+pandas = ["pandas (>=0.24.0)"]
+scikit-learn = ["scikit-learn (!=0.22.0)"]
+
+[[package]]
 name = "loguru"
 version = "0.7.2"
 description = "Python logging made (stupidly) simple"
@@ -1443,4 +1467,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "eba7425ff7f1c93c135190885a0224124868a329a66fc95a4147e028b55c124c"
+content-hash = "d8360ba3fddf56890e4a46ab3ca7f26ce8160e6637d017b5812a2e52a7657033"
