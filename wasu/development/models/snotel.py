@@ -234,6 +234,18 @@ class SnotelFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
+        if len(dataframe_for_model_fitting) < 2:
+            copied_df = dataframe_for_model_fitting.copy()
+            dataframe_for_model_fitting = pd.concat([copied_df, dataframe_for_model_fitting])
+
+            if alpha == 0.1:
+                # Calculate
+                adjustment = dataframe_for_model_fitting['target'] * 0.3
+                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] - adjustment
+            elif alpha == 0.9:
+                adjustment = dataframe_for_model_fitting['target'] * 0.3
+                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] + adjustment
+
         reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
                             min_data_in_leaf=2, min_child_samples=2, verbose=-1)
         reg.fit(np.array(dataframe_for_model_fitting[self.features_columns]),

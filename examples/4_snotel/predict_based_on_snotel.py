@@ -23,7 +23,7 @@ def generate_forecast_based_on_snotel():
                               enable_spatial_aggregation=True, collect_only_in_basin=False)
 
     # Save into file
-    model.save_predictions_as_submit(predicted, path='./results/snotel_50_basin.csv')
+    model.save_predictions_as_submit(predicted, path='./results/snotel_50_all.csv')
 
     TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_snotel')
 

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMRegressor
 from loguru import logger
 from matplotlib import pyplot as plt
 from pandas import Timestamp
@@ -110,26 +111,32 @@ class StreamFlowRegression(TrainModel):
             known_historical_values['year_number'] = known_historical_values['year'].dt.year
 
             # Fit model
-            model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
-                                                                                     known_streamflow_values=known_streamflow_values,
-                                                                                     issue_date=issue_date, site_id=site_id)
+            for alpha in [0.1, 0.5, 0.9]:
+                model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
+                                                                                         known_streamflow_values=known_streamflow_values,
+                                                                                         issue_date=issue_date, site_id=site_id,
+                                                                                         alpha=alpha)
 
-            # Generate forecast
-            agg_streamflow = known_streamflow_values[known_streamflow_values['julian_datetime'] >= issue_date_agg_start_julian]
-            agg_streamflow = agg_streamflow[agg_streamflow['julian_datetime'] < issue_date_julian]
-            dataset = self.__aggregate_features(agg_streamflow)
+                # Generate forecast
+                agg_streamflow = known_streamflow_values[known_streamflow_values['julian_datetime'] >= issue_date_agg_start_julian]
+                agg_streamflow = agg_streamflow[agg_streamflow['julian_datetime'] < issue_date_julian]
+                dataset = self.__aggregate_features(agg_streamflow)
 
-            predicted = model.predict(dataset[self.features_columns])[0]
+                predicted = model.predict(np.array(dataset[self.features_columns]))[0]
 
-            # Clip to borders
-            if predicted > max_target:
-                predicted = max_target
-            if predicted < min_target:
-                predicted = min_target
+                if alpha == 0.5:
+                    # Fix predicted value
+                    if predicted > max_target:
+                        predicted = max_target
+                    if predicted < min_target:
+                        predicted = min_target
 
-            row['volume_10'] = predicted - (predicted * self.lower_ratio)
-            row['volume_50'] = predicted
-            row['volume_90'] = predicted + (predicted * self.above_ratio)
+                if alpha == 0.1:
+                    row['volume_10'] = predicted
+                elif alpha == 0.5:
+                    row['volume_50'] = predicted
+                else:
+                    row['volume_90'] = predicted
 
             submit.append(pd.DataFrame(row).T)
 
@@ -138,7 +145,7 @@ class StreamFlowRegression(TrainModel):
 
     def _fit_model_based_on_historical_data(self, known_historical_values: pd.DataFrame,
                                             known_streamflow_values: pd.DataFrame, issue_date: Timestamp,
-                                            site_id: str):
+                                            site_id: str, alpha: float):
 
         dataframe_for_model_fitting = []
         for historical_year in list(known_historical_values['year'].dt.year):
@@ -171,8 +178,22 @@ class StreamFlowRegression(TrainModel):
         dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
         dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
 
-        reg = RandomForestRegressor(n_estimators=15)
-        reg.fit(dataframe_for_model_fitting[self.features_columns], dataframe_for_model_fitting['target'])
+        if len(dataframe_for_model_fitting) < 2:
+            copied_df = dataframe_for_model_fitting.copy()
+            dataframe_for_model_fitting = pd.concat([copied_df, dataframe_for_model_fitting])
+
+            if alpha == 0.1:
+                # Calculate
+                adjustment = dataframe_for_model_fitting['target'] * 0.3
+                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] - adjustment
+            elif alpha == 0.9:
+                adjustment = dataframe_for_model_fitting['target'] * 0.3
+                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] + adjustment
+
+        reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
+                            min_data_in_leaf=2, min_child_samples=2, verbose=-1)
+        reg.fit(np.array(dataframe_for_model_fitting[self.features_columns]),
+                np.array(dataframe_for_model_fitting['target']))
         min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
         if self.vis is True:
             # Make visualization 3d plot

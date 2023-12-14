@@ -37,9 +37,7 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 def ensemble_from_files(path: str):
     """ Collect predictions from the files and collect information about them into one prediction """
-    files_to_ensemble = ['../7_snodas/results/snodas.csv',
-                         '../4_snotel/results/snotel_50_all_stations.csv',
-                         '../4_snotel/results/snotel_50_basin.csv']
+    files_to_ensemble = ['../4_snotel/results/snotel_50_all.csv']
 
     # Load tables from csv files
     dataframes = []
@@ -52,21 +50,25 @@ def ensemble_from_files(path: str):
     for row_id in range(len(first_submit)):
         logger.debug(f'Assimilate data for row {row_id}')
 
+        predicted_low = []
         predicted_values = []
+        predicted_up = []
         for df in dataframes:
             current_record = df.iloc[row_id]
+            predicted_low.append(current_record.volume_10)
             predicted_values.append(current_record.volume_50)
+            predicted_up.append(current_record.volume_90)
+        predicted_low = np.array(predicted_low)
         predicted_values = np.array(predicted_values)
+        predicted_up = np.array(predicted_up)
 
         mean_value = np.median(np.array(predicted_values))
-        adjust_ratio = 0.35
+        adjust_ratio = 0.0
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
-                                'volume_10': [np.percentile(predicted_values, 10) -
-                                              (np.percentile(predicted_values, 10) * adjust_ratio)],
+                                'volume_10': [np.median(predicted_low) - (np.median(predicted_low) * adjust_ratio)],
                                 'volume_50': [mean_value],
-                                'volume_90': [np.percentile(predicted_values, 90) +
-                                              (np.percentile(predicted_values, 90) * adjust_ratio)]})
+                                'volume_90': [np.median(predicted_up) + (np.median(predicted_up) * adjust_ratio)]})
         corrected_response.append(dataset)
 
     corrected_response = pd.concat(corrected_response)
