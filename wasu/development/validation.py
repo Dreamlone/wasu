@@ -63,8 +63,7 @@ class ModelValidation:
             self.sites_to_validate = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_reservoir_inflow',
                                       'sweetwater_r_nr_alcova', 'missouri_r_at_toston', 'animas_r_at_durango',
                                       'yampa_r_nr_maybell', 'libby_reservoir_inflow', 'boise_r_nr_boise',
-                                      'green_r_bl_howard_a_hanson_dam', 'taylor_park_reservoir_inflow',
-                                      'dillon_reservoir_inflow']
+                                      'green_r_bl_howard_a_hanson_dam']
 
         self.folder_for_plots = folder_for_plots
 

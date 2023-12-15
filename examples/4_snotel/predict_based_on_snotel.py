@@ -20,10 +20,10 @@ def generate_forecast_based_on_snotel():
 
     model = SnotelFlowRegression(train_df=train_df, aggregation_days=50)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              enable_spatial_aggregation=True, collect_only_in_basin=False)
+                              enable_spatial_aggregation=True, collect_only_in_basin=True)
 
     # Save into file
-    model.save_predictions_as_submit(predicted, path='./results/snotel_50_all.csv')
+    model.save_predictions_as_submit(predicted, path='./results/snotel_50_basin.csv')
 
     TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_snotel')
 

@@ -15,6 +15,10 @@ class TrainModel:
         self.output = Output()
 
     @abstractmethod
+    def fit(self, submission_format: pd.DataFrame, **kwargs) -> Union[str, Path]:
+        raise NotImplementedError(f'Abstract method')
+
+    @abstractmethod
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(f'Abstract method')
 

@@ -4,9 +4,8 @@ Water Supply Forecast competition model
 
 ## How to use this repository
 
-This repository contains code both for preparing visualis
-ations and for training and ap
-plying predictive models.
+This repository contains code both for preparing visualisations 
+and for training and applying predictive models.
 
 It is recommended to start exploration with [examples](./examples) folder:
 

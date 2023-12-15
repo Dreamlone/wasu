@@ -15,3 +15,8 @@ def path_to_examples_folder():
 
 def path_to_plots_folder():
     return Path(get_project_path(), 'examples', 'plots')
+
+
+def get_models_path() -> Path:
+    """ Folder with serialized models """
+    return Path(get_project_path(), 'models')
