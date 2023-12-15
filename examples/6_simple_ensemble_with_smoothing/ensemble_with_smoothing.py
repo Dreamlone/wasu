@@ -25,7 +25,7 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
             for target in ['volume_10', 'volume_50', 'volume_90']:
                 # Process every target column
-                site_df[target] = site_df[target].rolling(2).mean()
+                site_df[target] = site_df[target].rolling(4).mean()
                 site_df = site_df.fillna(method='backfill')
 
             smoothed_df.append(site_df)
@@ -37,7 +37,8 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 def ensemble_from_files(path: str):
     """ Collect predictions from the files and collect information about them into one prediction """
-    files_to_ensemble = ['../4_snotel/results/snotel_50_all.csv']
+    files_to_ensemble = ['../3_streamflow/results/usgs_streamflow_170.csv',
+                         '../4_snotel/results/snotel_170_all.csv']
 
     # Load tables from csv files
     dataframes = []
@@ -62,8 +63,8 @@ def ensemble_from_files(path: str):
         predicted_values = np.array(predicted_values)
         predicted_up = np.array(predicted_up)
 
-        mean_value = np.median(np.array(predicted_values))
-        adjust_ratio = 0.0
+        mean_value = np.mean(np.array(predicted_values))
+        adjust_ratio = 0.1
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
                                 'volume_10': [np.median(predicted_low) - (np.median(predicted_low) * adjust_ratio)],
@@ -80,4 +81,4 @@ def ensemble_from_files(path: str):
 
 
 if __name__ == '__main__':
-    ensemble_from_files('results/snow_ensemble_12_12_2023.csv')
+    ensemble_from_files('results/ensemble.csv')

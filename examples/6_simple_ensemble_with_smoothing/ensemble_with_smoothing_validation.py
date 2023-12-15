@@ -26,7 +26,7 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
             for target in ['volume_10', 'volume_50', 'volume_90']:
                 # Process every target column
-                site_df[target] = site_df[target].rolling(3).mean()
+                site_df[target] = site_df[target].rolling(4).mean()
                 site_df = site_df.fillna(method='backfill')
 
             smoothed_df.append(site_df)
@@ -37,9 +37,8 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 
 def ensemble_from_files():
-    files_to_ensemble = ['../7_snodas/validation/snodas.csv',
-                         '../4_snotel/validation/snotel_50_basin.csv',
-                         '../4_snotel/validation/snotel_50_all.csv']
+    files_to_ensemble = ['../3_streamflow/validation/usgs_streamflow_170.csv',
+                         '../4_snotel/validation/snotel_170_all.csv']
     validator = ModelValidation(folder_for_plots='ensemble')
 
     dataframes = []
@@ -64,8 +63,8 @@ def ensemble_from_files():
         predicted_values = np.array(predicted_values)
         predicted_up = np.array(predicted_up)
 
-        mean_value = np.median(np.array(predicted_values))
-        adjust_ratio = 0.0
+        mean_value = np.mean(np.array(predicted_values))
+        adjust_ratio = 0.1
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
                                 'volume_10': [np.median(predicted_low) - (np.median(predicted_low) * adjust_ratio)],

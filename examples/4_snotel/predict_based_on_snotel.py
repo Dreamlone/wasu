@@ -18,12 +18,12 @@ def generate_forecast_based_on_snotel():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snotel = Path('../../data/snotel').resolve()
 
-    model = SnotelFlowRegression(train_df=train_df, aggregation_days=50)
-    predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              enable_spatial_aggregation=True, collect_only_in_basin=True)
+    model = SnotelFlowRegression(train_df=train_df, aggregation_days=170,
+                                 enable_spatial_aggregation=True, collect_only_in_basin=False)
+    predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel)
 
     # Save into file
-    model.save_predictions_as_submit(predicted, path='./results/snotel_50_basin.csv')
+    model.save_predictions_as_submit(predicted, path='./results/snotel_170_all.csv')
 
     TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_snotel')
 

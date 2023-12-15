@@ -1,273 +1,201 @@
+import datetime
+import pickle
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
-from pandas import Timestamp
 
 from wasu.development.data.snotel import collect_snotel_data_for_site
+from wasu.development.models.create import ModelsCreator
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
 from wasu.development.models.repeating import AdvancedRepeatingTrainModel
 from wasu.development.models.train_model import TrainModel
-from wasu.development.paths import path_to_data_folder
+
+
+def _aggregate_features(agg_snotel: pd.DataFrame):
+    agg_snotel = agg_snotel[['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY', 'date']]
+    agg_snotel = agg_snotel.dropna()
+
+    dataset = pd.DataFrame()
+    for feature in ['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY']:
+        mean_value = agg_snotel[feature].mean()
+        sum_value = agg_snotel[feature].sum()
+        min_value = agg_snotel[feature].min()
+        max_value = agg_snotel[feature].max()
+
+        dataset[f'mean_{feature}'] = [mean_value]
+        dataset[f'sum_{feature}'] = [sum_value]
+        dataset[f'min_{feature}'] = [min_value]
+        dataset[f'max_{feature}'] = [max_value]
+
+    return dataset
 
 
 class SnotelFlowRegression(TrainModel):
     """ Create forecasts based on streamflow USGS data """
 
-    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90):
+    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90,
+                 enable_spatial_aggregation: bool = True, collect_only_in_basin: bool = False):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
         # One month
         self.aggregation_days = aggregation_days
         self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
-                                 'mean_WTEQ_DAILY',
-                                 'sum_PREC_DAILY', 'sum_TAVG_DAILY', 'sum_TMAX_DAILY', 'sum_TMIN_DAILY',
-                                 'sum_WTEQ_DAILY',
-                                 'max_PREC_DAILY', 'max_TAVG_DAILY', 'max_TMAX_DAILY', 'max_TMIN_DAILY',
-                                 'max_WTEQ_DAILY',
-                                 'min_PREC_DAILY', 'min_TAVG_DAILY', 'min_TMAX_DAILY', 'min_TMIN_DAILY',
-                                 'min_WTEQ_DAILY']
+                                 'mean_WTEQ_DAILY', 'day_of_year']
 
         self.statistics = []
         self.vis = False
-
-    def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """ Make predictions based on SNOTEL data
-
-        :param submission_format: pandas  table with example of output
-        :param kwargs: additional parameters
-            - enable_spatial_aggregation - aggregated data from all stations per datetime label or not
-            - collect_only_in_basin - is there a need to use only stations which is included in the basin of site or all
-        """
         self.train_df = self.train_df.dropna()
+        self.train_df['year_as_int'] = self.train_df['year'].dt.year
 
+        self.enable_spatial_aggregation = enable_spatial_aggregation
+        self.collect_only_in_basin = collect_only_in_basin
+
+        self.name = f'snotel_{aggregation_days}_spatial_{self.enable_spatial_aggregation}_basin_{self.collect_only_in_basin}'
+        self.model_folder = ModelsCreator(self.name).model_folder()
+
+    def load_data_from_kwargs(self, kwargs):
         metadata: pd.DataFrame = kwargs['metadata']
         path_to_snotel: Path = kwargs['path_to_snotel']
-        enable_spatial_aggregation: Path = kwargs.get('enable_spatial_aggregation')
-        collect_only_in_basin = kwargs.get('collect_only_in_basin')
-        if collect_only_in_basin is None:
-            collect_only_in_basin = True
+
         self.vis: bool = kwargs.get('vis')
         if self.vis is None:
             self.vis = False
 
-        df_to_send = []
-        # For every site
-        for site in list(submission_format['site_id'].unique()):
-            snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=collect_only_in_basin)
+        return metadata, path_to_snotel
 
-            submission_site = submission_format[submission_format['site_id'] == site]
+    def fit(self, submission_format: pd.DataFrame, **kwargs) -> Union[str, Path]:
+        """ Fit new model based on snotel """
+        metadata, path_to_snotel = self.load_data_from_kwargs(kwargs)
+
+        for site in list(submission_format['site_id'].unique()):
+            logger.info(f'Train SNOTEL {self.name} model for site: {site}')
+            snotel_df = collect_snotel_data_for_site(path_to_snotel, site,
+                                                     collect_only_in_basin=self.collect_only_in_basin)
+
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
-
             if snotel_df is None or len(snotel_df) < 1:
-                logger.warning(f'Can not obtain SNOTEL data for site {site}. Apply Advanced repeating')
-                submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                       submission_site=submission_site)
-                df_to_send.append(submit)
-                self.statistics.append([site, 'backup'])
-                continue
+                raise ValueError(f'Can not obtain snotel data for site {site}')
+            else:
+                self.fit_main_model(site, snotel_df, site_df)
 
-            metadata_site = metadata[metadata['site_id'] == site]
-            season_start_month = metadata_site['season_start_month'].values[0]
-            season_end_month = metadata_site['season_end_month'].values[0]
+        return self.model_folder
 
-            logger.info(f'Generating forecast for site {site}. Start season month: {season_start_month}. '
-                        f'End season month: {season_end_month}')
+    def fit_main_model(self, site: str, snotel_df: pd.DataFrame, site_df: pd.DataFrame):
+        dataframe_for_model_fit = self._collect_data_for_model_fit(snotel_df, site_df)
 
-            try:
-                if enable_spatial_aggregation is not None and enable_spatial_aggregation is True:
-                    # Calculate mean values per basin
-                    logger.info(f'Len before aggregation: {len(snotel_df)}')
-                    snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
-                                                               'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
-                                                               'WTEQ_DAILY': 'mean'})
-                    snotel_df = snotel_df.reset_index()
-                    logger.info(f'Len after aggregation: {len(snotel_df)}')
-                    snotel_df = snotel_df.dropna()
-                submit = self._generate_forecasts_for_site(historical_values=site_df, snotel_df=snotel_df,
-                                                           submission_site=submission_site, site_id=site)
-                df_to_send.append(submit)
-                self.statistics.append([site, 'snotel model'])
-            except Exception as ex:
-                logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
-                submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                       submission_site=submission_site)
-                df_to_send.append(submit)
-                self.statistics.append([site, 'backup'])
+        # Fit model
+        for alpha in [0.1, 0.5, 0.9]:
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
 
-        for case in self.statistics:
-            print(f'Site: {case[0]}. Model: {case[1]}')
+            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
+                                min_data_in_leaf=20, min_child_samples=10, verbose=-1)
+            reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
+                    np.array(dataframe_for_model_fit['target']))
 
-        df_to_send = pd.concat(df_to_send)
-        return df_to_send
+            file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
+            model_path = Path(self.model_folder, file_name)
+            with open(model_path, 'wb') as pkl:
+                pickle.dump(reg, pkl)
 
-    def generate_forecasts_for_site(self, site: str, submission_site: pd.DataFrame) -> pd.DataFrame:
-        """ Generate SNOTEL forecast with default parameters """
-        path_to_snotel = Path(path_to_data_folder(), 'snotel').resolve()
-        enable_spatial_aggregation = True
+    def _collect_data_for_model_fit(self, snotel_df: pd.DataFrame, site_df: pd.DataFrame):
+        if self.enable_spatial_aggregation is not None and self.enable_spatial_aggregation is True:
+            # Calculate mean values per basin
+            snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
+                                                       'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
+                                                       'WTEQ_DAILY': 'mean'})
+            snotel_df = snotel_df.reset_index()
+            snotel_df = snotel_df.dropna()
 
-        snotel_df = collect_snotel_data_for_site(path_to_snotel, site, collect_only_in_basin=False)
-
-        site_df = self.train_df[self.train_df['site_id'] == site]
-        site_df = site_df.sort_values(by='year')
-
-        if snotel_df is None or len(snotel_df) < 1:
-            logger.warning(f'Can not obtain SNOTEL data for site {site}. Apply Advanced repeating')
-            submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                   submission_site=submission_site)
-            return submit
-
-        try:
-            if enable_spatial_aggregation is not None and enable_spatial_aggregation is True:
-                snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
-                                                           'TMAX_DAILY': 'mean', 'TMIN_DAILY': 'mean',
-                                                           'WTEQ_DAILY': 'mean'})
-                snotel_df = snotel_df.reset_index()
-                snotel_df = snotel_df.dropna()
-            submit = self._generate_forecasts_for_site(historical_values=site_df, snotel_df=snotel_df,
-                                                       submission_site=submission_site, site_id=site)
-            return submit
-        except Exception as ex:
-            logger.warning(f'Can not generate forecast for site {site} due to {ex}. Apply Advanced repeating')
-            submit = self.backup_model.generate_forecasts_for_site(historical_values=site_df,
-                                                                   submission_site=submission_site)
-            return submit
-
-    def _generate_forecasts_for_site(self, historical_values: pd.DataFrame,
-                                     snotel_df: pd.DataFrame, submission_site: pd.DataFrame, site_id: str):
         snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                                   julian_column='julian_datetime', round_julian=3)
 
+        dataframe_for_model_fit = []
+        for year in list(set(snotel_df['date'].dt.year)):
+            train_for_issue = site_df[site_df['year_as_int'] == year]
+            if len(train_for_issue) < 1:
+                continue
+            target_value = train_for_issue['volume'].values[0]
+
+            for day_of_year in np.arange(1, 220, step=15):
+
+                # Start aggregation - define borders
+                issue_date = datetime.datetime.strptime(f'{year} {day_of_year}', '%Y %j')
+
+                aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date)
+                aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date,
+                                                                         offset_days=self.aggregation_days)
+
+                agg_snotel = snotel_df[snotel_df['julian_datetime'] >= aggregation_start_julian]
+                agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < aggregation_end_julian]
+                if len(agg_snotel) < 1:
+                    continue
+
+                dataset = _aggregate_features(agg_snotel)
+                dataset['target'] = target_value
+                dataset['issue_date'] = issue_date
+                dataset['day_of_year'] = day_of_year
+                dataframe_for_model_fit.append(dataset)
+
+        dataframe_for_model_fit = pd.concat(dataframe_for_model_fit)
+        return dataframe_for_model_fit
+
+    def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        metadata, path_to_snotel = self.load_data_from_kwargs(kwargs)
+
         submit = []
-        for row_id, row in submission_site.iterrows():
-            ############################################
-            # GENERATE FORECAST FOR CURRENT ISSUE DATE #
-            ############################################
+        for site in list(submission_format['site_id'].unique()):
+            submission_site = submission_format[submission_format['site_id'] == site]
+            logger.info(f'Generate prediction for site: {site}')
 
-            # Get information about datetime
-            issue_date = row['issue_date']
-            issue_date_julian = get_julian_date_from_datetime(current_date=issue_date, round_julian=3)
-            issue_date_agg_start_julian = get_julian_date_from_datetime(current_date=issue_date,
-                                                                        offset_days=self.aggregation_days)
-
-            # Volume from the previous year
-            known_historical_values = historical_values[historical_values['year'] < issue_date]
-            known_snotel_values = snotel_df[snotel_df['julian_datetime'] < issue_date_julian]
-            known_snotel_values = known_snotel_values[['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY',
-                                                       'TMIN_DAILY', 'WTEQ_DAILY', 'date', 'julian_datetime']]
-
-            # Add information about year in the dataframe
-            known_snotel_values['year'] = known_snotel_values['date'].dt.year
-            known_historical_values['year_number'] = known_historical_values['year'].dt.year
-
-            # Fit model for each interval
-            for alpha in [0.1, 0.5, 0.9]:
-                model, min_target, max_target = self._fit_model_based_on_historical_data(known_historical_values=known_historical_values,
-                                                                                         known_snotel_values=known_snotel_values,
-                                                                                         issue_date=issue_date,
-                                                                                         site_id=site_id, alpha=alpha)
-
-                # Generate forecast
-                agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= issue_date_agg_start_julian]
-                agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < issue_date_julian]
-                dataset = self.__aggregate_features(agg_snotel)
-
-                predicted = model.predict(dataset[self.features_columns])[0]
-
-                if alpha == 0.5:
-                    # Fix predicted value
-                    if predicted > max_target:
-                        predicted = max_target
-                    if predicted < min_target:
-                        predicted = min_target
-
-                if alpha == 0.1:
-                    row['volume_10'] = predicted
-                elif alpha == 0.5:
-                    row['volume_50'] = predicted
-                else:
-                    row['volume_90'] = predicted
-
-            submit.append(pd.DataFrame(row).T)
+            submission_site = self.predict_main_model(site, submission_site, path_to_snotel)
+            submit.append(submission_site)
 
         submit = pd.concat(submit)
         return submit
 
-    def _fit_model_based_on_historical_data(self, known_historical_values: pd.DataFrame,
-                                            known_snotel_values: pd.DataFrame,
-                                            issue_date: Timestamp,
-                                            site_id: str,
-                                            alpha: float):
+    def _collect_data_for_model_predict(self, snotel_df: pd.DataFrame, submission_site: pd.DataFrame):
+        snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
+                                                  julian_column='julian_datetime', round_julian=3)
+        collected_data = []
+        for row_id, row in submission_site.iterrows():
+            issue_date = row['issue_date']
 
-        dataframe_for_model_fitting = []
-        for historical_year in list(known_historical_values['year'].dt.year):
-            # For each year in the past collect data for model fitting
-            if historical_year not in list(known_snotel_values['year'].unique()):
-                continue
-            # One year in advance for aggregation
-            if historical_year - 1 not in list(known_snotel_values['year'].unique()):
-                continue
-
-            # Find that day in the past (and min and max borders for data aggregation)
-            years_offset = issue_date.year - historical_year
-            aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date, offset_years=years_offset)
-            aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date, offset_years=years_offset,
+            aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date)
+            aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date,
                                                                      offset_days=self.aggregation_days)
 
-            agg_snotel = known_snotel_values[known_snotel_values['julian_datetime'] >= aggregation_start_julian]
-            agg_snotel = agg_snotel[agg_snotel['julian_datetime'] < aggregation_end_julian]
+            agg_streamflow = snotel_df[snotel_df['julian_datetime'] >= aggregation_start_julian]
+            agg_streamflow = agg_streamflow[agg_streamflow['julian_datetime'] < aggregation_end_julian]
 
-            dataset = self.__aggregate_features(agg_snotel)
+            dataset = _aggregate_features(agg_streamflow)
+            dataset['issue_date'] = issue_date
+            dataset['day_of_year'] = issue_date.dayofyear
 
-            # Add target (for prediction)
-            historical_data_for_year = known_historical_values[known_historical_values['year_number'] == historical_year]
-            target = historical_data_for_year['volume'].values[0]
+            collected_data.append(dataset)
 
-            dataset['historical_year'] = historical_year
-            dataset['target'] = target
-            dataframe_for_model_fitting.append(dataset)
+        collected_data = pd.concat(collected_data)
+        return collected_data
 
-        dataframe_for_model_fitting = pd.concat(dataframe_for_model_fitting)
-        dataframe_for_model_fitting = dataframe_for_model_fitting.dropna()
+    def predict_main_model(self, site: str, submission_site: pd.DataFrame, path_to_snotel: Union[str, Path]):
+        snotel_df = collect_snotel_data_for_site(path_to_snotel, site,
+                                                 collect_only_in_basin=self.collect_only_in_basin)
 
-        if len(dataframe_for_model_fitting) < 2:
-            copied_df = dataframe_for_model_fitting.copy()
-            dataframe_for_model_fitting = pd.concat([copied_df, dataframe_for_model_fitting])
+        dataframe_for_model_predict = self._collect_data_for_model_predict(snotel_df, submission_site)
 
-            if alpha == 0.1:
-                # Calculate
-                adjustment = dataframe_for_model_fitting['target'] * 0.3
-                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] - adjustment
-            elif alpha == 0.9:
-                adjustment = dataframe_for_model_fitting['target'] * 0.3
-                dataframe_for_model_fitting['target'] = dataframe_for_model_fitting['target'] + adjustment
+        for alpha, column_name in zip([0.1, 0.5, 0.9], ['volume_10', 'volume_50', 'volume_90']):
+            file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
+            model_path = Path(self.model_folder, file_name)
 
-        reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
-                            min_data_in_leaf=2, min_child_samples=2, verbose=-1)
-        reg.fit(np.array(dataframe_for_model_fitting[self.features_columns]),
-                np.array(dataframe_for_model_fitting['target']))
-        min_target, max_target = min(dataframe_for_model_fitting['target']), max(dataframe_for_model_fitting['target'])
-        return reg, min_target, max_target
+            with open(model_path, 'rb') as pkl:
+                model = pickle.load(pkl)
 
-    @staticmethod
-    def __aggregate_features(agg_snotel: pd.DataFrame):
-        # Collect statistics
-        agg_snotel = agg_snotel.dropna()
+            predicted = model.predict(np.array(dataframe_for_model_predict[self.features_columns]))
+            submission_site[column_name] = predicted
 
-        dataset = pd.DataFrame()
-        for feature in ['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY']:
-            mean_value = agg_snotel[feature].mean()
-            sum_value = agg_snotel[feature].sum()
-            min_value = agg_snotel[feature].min()
-            max_value = agg_snotel[feature].max()
-
-            dataset[f'mean_{feature}'] = [mean_value]
-            dataset[f'sum_{feature}'] = [sum_value]
-            dataset[f'min_{feature}'] = [min_value]
-            dataset[f'max_{feature}'] = [max_value]
-
-        return dataset
+        return submission_site

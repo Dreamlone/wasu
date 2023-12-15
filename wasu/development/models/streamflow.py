@@ -98,10 +98,10 @@ class StreamFlowRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            logger.debug(f'Train model for alpha {alpha}')
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
 
             reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
-                                min_data_in_leaf=2, min_child_samples=2, verbose=-1)
+                                min_data_in_leaf=20, min_child_samples=10, verbose=-1)
             reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
                     np.array(dataframe_for_model_fit['target']))
 
@@ -173,7 +173,7 @@ class StreamFlowRegression(TrainModel):
                 continue
             target_value = train_for_issue['volume'].values[0]
 
-            for day_of_year in range(1, 200):
+            for day_of_year in np.arange(1, 220, step=15):
 
                 # Start aggregation - define borders
                 issue_date = datetime.datetime.strptime(f'{year} {day_of_year}', '%Y %j')

@@ -5,9 +5,7 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.snotel import SnotelFlowRegression
-from wasu.development.models.streamflow import StreamFlowRegression
 from wasu.development.validation import ModelValidation
-from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
 
@@ -22,12 +20,12 @@ def generate_forecast_based_on_snotel():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snotel = Path('../../data/snotel').resolve()
 
-    model = SnotelFlowRegression(train_df=train_df, aggregation_days=180)
-    predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              enable_spatial_aggregation=True, collect_only_in_basin=False)
+    model = SnotelFlowRegression(train_df=train_df, aggregation_days=170,
+                                 enable_spatial_aggregation=True, collect_only_in_basin=False)
+    predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel)
 
     validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted, path='./validation/snotel_180_all.csv',
+    model.save_predictions_as_submit(predicted, path='./validation/snotel_170_all.csv',
                                      submission_format=submission_format)
 
 
