@@ -7,12 +7,15 @@ import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
+from sklearn.linear_model import LinearRegression, QuantileRegressor
 
 from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.models.create import ModelsCreator
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
 from wasu.development.models.repeating import AdvancedRepeatingTrainModel
 from wasu.development.models.train_model import TrainModel
+from wasu.development.validation import smape
+from wasu.development.vis.visualization import created_spatial_plot
 
 
 def _aggregate_features(agg_snotel: pd.DataFrame):
@@ -45,7 +48,8 @@ class SnotelFlowRegression(TrainModel):
         # One month
         self.aggregation_days = aggregation_days
         self.features_columns = ['mean_PREC_DAILY', 'mean_TAVG_DAILY', 'mean_TMAX_DAILY', 'mean_TMIN_DAILY',
-                                 'mean_WTEQ_DAILY', 'day_of_year']
+                                 'mean_WTEQ_DAILY', 'sum_WTEQ_DAILY', 'min_WTEQ_DAILY', 'max_WTEQ_DAILY',
+                                 'day_of_year']
 
         self.statistics = []
         self.vis = False
@@ -91,13 +95,18 @@ class SnotelFlowRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
-
-            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
-                                min_data_in_leaf=20, min_child_samples=10, verbose=-1)
+            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, max_depth=105,
+                                min_data_in_leaf=3, min_child_samples=3, verbose=-1, n_estimators=25)
             reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
                     np.array(dataframe_for_model_fit['target']))
 
+            smape_metric = smape(y_true=reg.predict(np.array(dataframe_for_model_fit[self.features_columns])),
+                                 y_pred=np.array(dataframe_for_model_fit['target'], dtype=float))
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}. SMAPE: {smape_metric}')
+            if self.vis is True:
+                created_spatial_plot(dataframe_for_model_fit, reg, self.features_columns,
+                                     self.name, f'{site}_alpha_{alpha}.png',
+                                     f'SNOTEL regression model {site}. Alpha: {alpha}')
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
             with open(model_path, 'wb') as pkl:

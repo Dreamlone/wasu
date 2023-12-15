@@ -67,9 +67,9 @@ def ensemble_from_files(path: str):
         adjust_ratio = 0.1
         dataset = pd.DataFrame({'site_id': [first_submit.iloc[row_id].site_id],
                                 'issue_date': [first_submit.iloc[row_id].issue_date],
-                                'volume_10': [np.median(predicted_low) - (np.median(predicted_low) * adjust_ratio)],
+                                'volume_10': [np.mean(predicted_low) - (np.mean(predicted_low) * adjust_ratio)],
                                 'volume_50': [mean_value],
-                                'volume_90': [np.median(predicted_up) + (np.median(predicted_up) * adjust_ratio)]})
+                                'volume_90': [np.mean(predicted_up) + (np.mean(predicted_up) * adjust_ratio)]})
         corrected_response.append(dataset)
 
     corrected_response = pd.concat(corrected_response)

@@ -140,9 +140,11 @@ def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, fe
     plots_folder = Path(path_to_plots_folder(), folder_name)
     plots_folder.mkdir(exist_ok=True, parents=True)
 
+    first_feature_name = features_columns[-1]
+    second_feature_name = features_columns[0]
     cmap = 'coolwarm'
-    x_vals = np.array(dataframe_for_model_fitting['min_value'])
-    y_vals = np.array(dataframe_for_model_fitting['mean_value'])
+    x_vals = np.array(dataframe_for_model_fitting[first_feature_name])
+    y_vals = np.array(dataframe_for_model_fitting[second_feature_name])
     z_vals = np.array(dataframe_for_model_fitting['target'])
 
     # Generate dataframe for model predict
@@ -150,12 +152,12 @@ def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, fe
     df_with_features = []
     for x_value in generated_x_values:
         generated_y_values = np.linspace(min(y_vals), max(y_vals), 150)
-        feature_df = pd.DataFrame({'mean_value': generated_y_values})
-        feature_df['min_value'] = x_value
+        feature_df = pd.DataFrame({second_feature_name: generated_y_values})
+        feature_df[first_feature_name] = x_value
         df_with_features.append(feature_df)
     df_with_features = pd.concat(df_with_features)
     for feature in features_columns:
-        if feature not in ['mean_value', 'min_value']:
+        if feature not in [first_feature_name, second_feature_name]:
             df_with_features[feature] = dataframe_for_model_fitting[feature].mean()
 
     predicted = reg.predict(df_with_features[features_columns])
@@ -164,26 +166,26 @@ def created_spatial_plot(dataframe_for_model_fitting: pd.DataFrame, reg: Any, fe
     fig = plt.figure(figsize=(16, 7))
     # First plot
     ax = fig.add_subplot(121, projection='3d')
-    ax.scatter(np.array(df_with_features['min_value']),
-               np.array(df_with_features['mean_value']),
+    ax.scatter(np.array(df_with_features[first_feature_name]),
+               np.array(df_with_features[second_feature_name]),
                predicted, c=np.ravel(predicted), cmap=cmap, s=1, alpha=0.3, vmin=min(points), vmax=max(points))
     surf = ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
     cb = fig.colorbar(surf, shrink=0.3, aspect=10)
     cb.set_label(f'Target', fontsize=12)
     ax.view_init(3, 10)
-    ax.set_xlabel('min_value', fontsize=13)
-    ax.set_ylabel('mean_value', fontsize=13)
+    ax.set_xlabel(first_feature_name, fontsize=13)
+    ax.set_ylabel(second_feature_name, fontsize=13)
     ax.set_zlabel('target', fontsize=13)
 
     # Second plot
     ax = fig.add_subplot(122, projection='3d')
-    ax.scatter(np.array(df_with_features['min_value']),
-               np.array(df_with_features['mean_value']),
+    ax.scatter(np.array(df_with_features[first_feature_name]),
+               np.array(df_with_features[second_feature_name]),
                predicted, c=np.ravel(predicted), cmap=cmap, s=1, alpha=0.3, vmin=min(points), vmax=max(points))
     ax.scatter(x_vals, y_vals, z_vals, c=points, cmap=cmap, edgecolors='black', linewidth=0.3, s=100)
     ax.view_init(35, 50)
-    ax.set_xlabel('min_value', fontsize=13)
-    ax.set_ylabel('mean_value', fontsize=13)
+    ax.set_xlabel(first_feature_name, fontsize=13)
+    ax.set_ylabel(second_feature_name, fontsize=13)
     ax.set_zlabel('target', fontsize=13)
     if title is not None:
         plt.suptitle(title, fontsize=15)
