@@ -19,7 +19,7 @@ def train_snotel_model():
     path_to_snotel = Path('../../data/snotel').resolve()
 
     model = SnotelFlowRegression(train_df=train_df,
-                                 aggregation_days=172,
+                                 aggregation_days=150,
                                  enable_spatial_aggregation=True,
                                  collect_only_in_basin=False)
     model.fit(submission_format, metadata=metadata, path_to_snotel=path_to_snotel, vis=False)

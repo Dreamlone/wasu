@@ -96,7 +96,7 @@ class SnotelFlowRegression(TrainModel):
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
             reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, max_depth=105,
-                                min_data_in_leaf=3, min_child_samples=3, verbose=-1, n_estimators=25)
+                                min_data_in_leaf=10, min_child_samples=10, verbose=-1, n_estimators=25)
             reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
                     np.array(dataframe_for_model_fit['target']))
 

@@ -14,6 +14,7 @@ from wasu.development.models.custom.advanced_repeating import AdvancedRepeatingC
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
 from wasu.development.models.repeating import AdvancedRepeatingTrainModel
 from wasu.development.models.train_model import TrainModel
+from wasu.development.validation import smape
 
 
 def _aggregate_features(agg_streamflow: pd.DataFrame):
@@ -98,12 +99,14 @@ class StreamFlowRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
-
             reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
-                                min_data_in_leaf=20, min_child_samples=10, verbose=-1)
+                                min_data_in_leaf=10, min_child_samples=10, verbose=-1)
             reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
                     np.array(dataframe_for_model_fit['target']))
+
+            smape_metric = smape(y_true=reg.predict(np.array(dataframe_for_model_fit[self.features_columns])),
+                                 y_pred=np.array(dataframe_for_model_fit['target'], dtype=float))
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}. SMAPE: {smape_metric}')
 
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)

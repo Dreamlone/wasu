@@ -37,8 +37,8 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 
 def ensemble_from_files():
-    files_to_ensemble = ['../3_streamflow/validation/usgs_streamflow_170.csv',
-                         '../4_snotel/validation/snotel_170_all.csv']
+    files_to_ensemble = ['../3_streamflow/validation/usgs_streamflow_150.csv',
+                         '../3_streamflow/validation/usgs_streamflow_200.csv']
     validator = ModelValidation(folder_for_plots='ensemble')
 
     dataframes = []
