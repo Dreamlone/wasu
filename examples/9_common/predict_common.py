@@ -12,9 +12,9 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snotel():
-    method = 'forest'
-    aggregation_days_snodas = 28
-    aggregation_days_snotel = 80
+    method = 'linear'
+    aggregation_days_snodas = 180
+    aggregation_days_snotel = 14
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     submission_format = pd.read_csv(Path('../../data/submission_format.csv'), parse_dates=['issue_date'])
 

@@ -12,6 +12,7 @@ from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import QuantileRegressor
 from sklearn.metrics import mean_absolute_error
+from sklearn.preprocessing import StandardScaler
 
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.data.snotel import collect_snotel_data_for_site
@@ -144,16 +145,18 @@ class CommonRegression(TrainModel):
             df_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year < 2020]
             df_test = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year >= 2020]
             if alpha == 0.9:
-                target = np.array(df_fit['target']) * 1.2
+                target = np.array(df_fit['target']) * 0.95
             elif alpha == 0.5:
                 target = np.array(df_fit['target'])
             else:
-                target = np.array(df_fit['target']) * 0.95
+                target = np.array(df_fit['target']) * 0.85
 
-            reg.fit(np.array(df_fit[features_columns]), target)
+            scaler = StandardScaler()
+            scaled_train = scaler.fit_transform(np.array(df_fit[features_columns]))
+            reg.fit(scaled_train, target)
 
-            train_predicted = reg.predict(np.array(df_fit[features_columns]))
-            test_predicted = reg.predict(np.array(df_test[features_columns]))
+            train_predicted = reg.predict(scaler.transform(np.array(df_fit[features_columns])))
+            test_predicted = reg.predict(scaler.transform(np.array(df_test[features_columns])))
             mae_metric_fit = mean_absolute_error(y_pred=train_predicted,
                                                  y_true=np.array(target, dtype=float))
             mae_metric_test = mean_absolute_error(y_pred=test_predicted, y_true=np.array(df_test['target'], dtype=float))
@@ -168,6 +171,11 @@ class CommonRegression(TrainModel):
             model_path = Path(self.model_folder, file_name)
             with open(model_path, 'wb') as pkl:
                 pickle.dump(reg, pkl)
+
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+            with open(scaler_path, 'wb') as pkl:
+                pickle.dump(scaler, pkl)
 
         if self.vis is True:
             plt.scatter(dataframe_for_model_fit['issue_date'], dataframe_for_model_fit['target'],
@@ -253,7 +261,6 @@ class CommonRegression(TrainModel):
             logger.info(f'Generate prediction for site: {site}')
 
             submission_site = self.predict_main_model(site, submission_site, path_to_snodas, path_to_snotel)
-            logger.debug(f'Size of dataframe: {len(submission_site)}')
 
             # Correct according to train data (predictions can not be higher or lower)
             site_train_data = self.train_df[self.train_df['site_id'] == site]
@@ -262,8 +269,6 @@ class CommonRegression(TrainModel):
             for col in ['volume_10', 'volume_50', 'volume_90']:
                 submission_site[col][submission_site[col] <= min_value] = min_value
                 submission_site[col][submission_site[col] >= max_value] = max_value
-
-            logger.debug(f'Size of dataframe: {len(submission_site)}')
 
             submit.append(submission_site)
 
@@ -311,13 +316,19 @@ class CommonRegression(TrainModel):
         features_columns.sort()
 
         for alpha, column_name in zip([0.1, 0.5, 0.9], ['volume_10', 'volume_50', 'volume_90']):
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+
+            with open(scaler_path, 'rb') as pkl:
+                scaler = pickle.load(pkl)
+
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
 
             with open(model_path, 'rb') as pkl:
                 model = pickle.load(pkl)
 
-            predicted = model.predict(np.array(dataframe_for_model_predict[features_columns]))
+            predicted = model.predict(scaler.transform(np.array(dataframe_for_model_predict[features_columns])))
             submission_site[column_name] = predicted
 
         return submission_site

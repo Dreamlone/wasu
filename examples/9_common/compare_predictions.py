@@ -34,7 +34,7 @@ def compare_predictions():
         '../3_streamflow/results/usgs_streamflow_170.csv', '../4_snotel/results/snotel_170_all.csv'
     """
     files_to_ensemble = ['../6_simple_ensemble_with_smoothing/results/best_result.csv',
-                         '../9_common/results/forest_28_80.csv']
+                         '../9_common/results/linear_180_14.csv']
 
     plots_folder = Path(path_to_examples_folder(), 'plots_comparison')
     plots_folder.mkdir(exist_ok=True, parents=True)

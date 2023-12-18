@@ -5,16 +5,15 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.common import CommonRegression
-from wasu.development.models.snotel import SnotelFlowRegression
 from wasu.development.validation import ModelValidation
 
 warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snotel():
-    method = 'forest'
-    aggregation_days_snodas = 28
-    aggregation_days_snotel = 80
+    method = 'linear'
+    aggregation_days_snodas = 180
+    aggregation_days_snotel = 14
     validator = ModelValidation(folder_for_plots='common')
 
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])

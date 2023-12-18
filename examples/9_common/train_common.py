@@ -20,9 +20,9 @@ def train_common_model():
     path_to_snodas = Path('../../data/snodas_csv').resolve()
     path_to_snotel = Path('../../data/snotel').resolve()
 
-    model = CommonRegression(train_df=train_df, method='forest',
-                             aggregation_days_snodas=28,
-                             aggregation_days_snotel=80)
+    model = CommonRegression(train_df=train_df, method='linear',
+                             aggregation_days_snodas=180,
+                             aggregation_days_snotel=14)
 
     model.fit(submission_format, metadata=metadata,
               path_to_snotel=path_to_snotel, path_to_snodas=path_to_snodas,
