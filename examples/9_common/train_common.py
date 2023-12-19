@@ -5,7 +5,6 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.common import CommonRegression
-from wasu.development.models.snotel import SnotelFlowRegression
 
 warnings.filterwarnings('ignore')
 
@@ -19,13 +18,15 @@ def train_common_model():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snodas = Path('../../data/snodas_csv').resolve()
     path_to_snotel = Path('../../data/snotel').resolve()
+    path_to_teleconnections = Path('../../data/teleconnections').resolve()
 
     model = CommonRegression(train_df=train_df, method='linear',
-                             aggregation_days_snodas=180,
-                             aggregation_days_snotel=14)
+                             aggregation_days_snodas=25,
+                             aggregation_days_snotel=80)
 
     model.fit(submission_format, metadata=metadata,
               path_to_snotel=path_to_snotel, path_to_snodas=path_to_snodas,
+              path_to_teleconnections=path_to_teleconnections,
               vis=False)
 
 
