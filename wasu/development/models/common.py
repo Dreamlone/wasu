@@ -344,6 +344,10 @@ class CommonRegression(TrainModel):
             with open(model_path, 'rb') as pkl:
                 model = pickle.load(pkl)
 
+            if bool(dataframe_for_model_predict.isnull().values.any()) is True:
+                # There are gaps
+                dataframe_for_model_predict = dataframe_for_model_predict.fillna(method='ffill')
+
             predicted = model.predict(scaler.transform(np.array(dataframe_for_model_predict[features_columns])))
             submission_site[column_name] = predicted
 

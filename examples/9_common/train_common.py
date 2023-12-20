@@ -21,8 +21,8 @@ def train_common_model():
     path_to_teleconnections = Path('../../data/teleconnections').resolve()
 
     model = CommonRegression(train_df=train_df, method='linear',
-                             aggregation_days_snodas=25,
-                             aggregation_days_snotel=80)
+                             aggregation_days_snodas=5,
+                             aggregation_days_snotel=30)
 
     model.fit(submission_format, metadata=metadata,
               path_to_snotel=path_to_snotel, path_to_snodas=path_to_snodas,
