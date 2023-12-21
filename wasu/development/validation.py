@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from matplotlib import pyplot as plt
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_pinball_loss
 
 from wasu.development.paths import path_to_examples_folder
 
@@ -124,7 +124,11 @@ class ModelValidation:
         smape_metric = smape(y_true=np.array(df_for_comparison['actual'], dtype=float),
                              y_pred=np.array(df_for_comparison['volume_50'], dtype=float))
 
+        mpl = mean_pinball_loss(y_true=np.array(df_for_comparison['actual'], dtype=float),
+                                y_pred=np.array(df_for_comparison['volume_50'], dtype=float))
+
         logger.info(f'Symmetric MAPE metric: {smape_metric:.2f}')
+        logger.info(f'Mean pinball loss metric: {mpl:.2f}')
         logger.warning('--------------------------------------------')
 
     def _make_plots(self, df_for_comparison: pd.DataFrame, site_to_validate: str):

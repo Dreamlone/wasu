@@ -11,10 +11,10 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snotel():
-    method = 'forest'
+    method = 'linear'
     aggregation_days_snodas = 14
-    aggregation_days_snotel = 150
-    aggregation_days_pdsi = 150
+    aggregation_days_snotel = 110
+    aggregation_days_pdsi = 180
     validator = ModelValidation(folder_for_plots='common')
 
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])

@@ -168,9 +168,12 @@ class CommonRegression(TrainModel):
             if self.method == 'lg':
                 reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, verbose=-1)
             elif self.method == 'linear':
-                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.02)
+                if alpha == 0.5:
+                    reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
+                else:
+                    reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.08)
             elif self.method == 'forest':
-                reg = RandomForestRegressor(max_depth=19)
+                reg = RandomForestRegressor(min_samples_leaf=3)
             elif self.method == 'knn':
                 reg = Ridge(alpha=2)
             else:
@@ -178,14 +181,24 @@ class CommonRegression(TrainModel):
 
             df_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year < 2020]
             df_test = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year >= 2020]
-            if self.method != 'linear' and alpha == 0.9:
-                target = np.array(df_fit['target']) * 1.3
-            elif self.method != 'linear' and alpha == 0.5:
-                target = np.array(df_fit['target'])
-            elif self.method != 'linear' and alpha == 0.1:
-                target = np.array(df_fit['target']) * 0.7
+            if self.method != 'linear':
+                if alpha == 0.9:
+                    target = np.array(df_fit['target']) * 1.3
+                elif alpha == 0.5:
+                    target = np.array(df_fit['target'])
+                elif alpha == 0.1:
+                    target = np.array(df_fit['target']) * 0.7
+                else:
+                    target = np.array(df_fit['target'])
             else:
-                target = np.array(df_fit['target'])
+                if alpha == 0.9:
+                    target = np.array(df_fit['target']) * 1.04
+                elif alpha == 0.5:
+                    target = np.array(df_fit['target'])
+                elif alpha == 0.1:
+                    target = np.array(df_fit['target']) * 0.96
+                else:
+                    target = np.array(df_fit['target'])
 
             scaler = StandardScaler()
             scaled_train = scaler.fit_transform(np.array(df_fit[features_columns]))
@@ -274,7 +287,7 @@ class CommonRegression(TrainModel):
 
                 current_dataset = None
                 for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
-                                                       [self.aggregation_days_snodas, self.aggregation_days_snotel, 100,
+                                                       [self.aggregation_days_snodas, self.aggregation_days_snotel, 160,
                                                         self.aggregation_days_pdsi],
                                                        ['snodas', 'snotel', 'soi', 'pdsi']):
                     dataset = aggregate_data_for_issue_date(issue_date, day_of_year, df, aggregation_days,
@@ -357,7 +370,7 @@ class CommonRegression(TrainModel):
 
             current_dataset = None
             for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
-                                                   [self.aggregation_days_snodas, self.aggregation_days_snotel, 100,
+                                                   [self.aggregation_days_snodas, self.aggregation_days_snotel, 160,
                                                     self.aggregation_days_pdsi],
                                                    ['snodas', 'snotel', 'soi', 'pdsi']):
                 dataset = aggregate_data_for_issue_date(issue_date, issue_date.dayofyear, df, aggregation_days,
