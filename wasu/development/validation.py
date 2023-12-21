@@ -42,7 +42,7 @@ class ModelValidation:
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
             # self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
-            self.years_to_validate = [2012, 2014, 2016, 2018, 2020]
+            self.years_to_validate = [2020, 2022]
         else:
             if len(set(self.years_to_validate).intersection(test_years)) > 0:
                 raise ValueError(f'Can not validate if the year is in test data: {test_years}')

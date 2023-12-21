@@ -10,10 +10,12 @@ from loguru import logger
 from matplotlib import pyplot as plt
 from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import QuantileRegressor
+from sklearn.linear_model import QuantileRegressor, Ridge
 from sklearn.metrics import mean_absolute_error
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
+from wasu.development.data.pdsi import collect_pdsi_data_for_site
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.data.teleconnections import collect_telecon_data_for_site
@@ -46,6 +48,22 @@ def _aggregate_features_snodas(agg_snodas: pd.DataFrame):
     return dataset
 
 
+def _aggregate_features_pdsi(agg_pdsi: pd.DataFrame):
+    dataset = pd.DataFrame()
+    for feature in ['Mean_PDSI']:
+        mean_value = agg_pdsi[feature].mean()
+        sum_value = agg_pdsi[feature].sum()
+        min_value = agg_pdsi[feature].min()
+        max_value = agg_pdsi[feature].max()
+
+        dataset[f'mean_{feature}'] = [mean_value]
+        dataset[f'sum_{feature}'] = [sum_value]
+        dataset[f'min_{feature}'] = [min_value]
+        dataset[f'max_{feature}'] = [max_value]
+
+    return dataset
+
+
 def _aggregate_features_snotel(agg_snotel: pd.DataFrame):
     agg_snotel = agg_snotel[['PREC_DAILY', 'TAVG_DAILY', 'TMAX_DAILY', 'TMIN_DAILY', 'WTEQ_DAILY']]
     agg_snotel = agg_snotel.dropna()
@@ -66,7 +84,7 @@ def _aggregate_features_snotel(agg_snotel: pd.DataFrame):
 
 
 def _aggregate_features_soi(agg_soi: pd.DataFrame):
-    return agg_soi.head(1)[['SOI']]
+    return agg_soi.head(1)[['SOI', 'SOI_STANDART', 'PNA']]
 
 
 def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe, aggregation_days,
@@ -86,6 +104,8 @@ def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe, aggregatio
         dataset = _aggregate_features_snotel(aggregated)
     elif label == 'soi':
         dataset = _aggregate_features_soi(aggregated)
+    elif label == 'pdsi':
+        dataset = _aggregate_features_pdsi(aggregated)
     else:
         raise ValueError(f'Not supported label {label}')
 
@@ -102,7 +122,8 @@ class CommonRegression(TrainModel):
     def __init__(self, train_df: pd.DataFrame,
                  method: str = 'lg',
                  aggregation_days_snodas: int = 90,
-                 aggregation_days_snotel: int = 90):
+                 aggregation_days_snotel: int = 90,
+                 aggregation_days_pdsi: int = 90):
         super().__init__(train_df)
 
         # Use only available data
@@ -113,9 +134,10 @@ class CommonRegression(TrainModel):
         self.train_df = self.train_df.dropna()
         self.train_df['year_as_int'] = self.train_df['year'].dt.year
 
-        self.name = f'common_{method}_{aggregation_days_snodas}_{aggregation_days_snotel}'
+        self.name = f'common_{method}_{aggregation_days_snodas}_{aggregation_days_snotel}_{aggregation_days_pdsi}'
         self.aggregation_days_snodas = aggregation_days_snodas
         self.aggregation_days_snotel = aggregation_days_snotel
+        self.aggregation_days_pdsi = aggregation_days_pdsi
         self.model_folder = ModelsCreator(self.name).model_folder()
         self.method = method
 
@@ -124,16 +146,17 @@ class CommonRegression(TrainModel):
         path_to_snodas: Path = kwargs['path_to_snodas']
         path_to_snotel: Path = kwargs['path_to_snotel']
         path_to_teleconnections: Path = kwargs['path_to_teleconnections']
+        path_to_pdsi: Path = kwargs['path_to_pdsi']
 
         self.vis: bool = kwargs.get('vis')
         if self.vis is None:
             self.vis = False
 
-        return metadata, path_to_snodas, path_to_snotel, path_to_teleconnections
+        return metadata, path_to_snodas, path_to_snotel, path_to_teleconnections, path_to_pdsi
 
     def fit_main_model(self, site: str, snodas_df: pd.DataFrame, snotel_df: pd.DataFrame, telecon_df: pd.DataFrame,
-                       site_df: pd.DataFrame):
-        dataframe_for_model_fit = self._collect_data_for_model_fit(snodas_df, snotel_df, telecon_df, site_df)
+                       pdsi_df: pd.DataFrame, site_df: pd.DataFrame):
+        dataframe_for_model_fit = self._collect_data_for_model_fit(snodas_df, snotel_df, telecon_df, pdsi_df, site_df)
         features_columns = list(dataframe_for_model_fit.columns)
         for i in ['issue_date', 'target']:
             features_columns.remove(i)
@@ -145,20 +168,24 @@ class CommonRegression(TrainModel):
             if self.method == 'lg':
                 reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, verbose=-1)
             elif self.method == 'linear':
-                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.01)
+                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.02)
             elif self.method == 'forest':
-                reg = RandomForestRegressor()
+                reg = RandomForestRegressor(max_depth=19)
+            elif self.method == 'knn':
+                reg = Ridge(alpha=2)
             else:
                 raise NotImplementedError()
 
             df_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year < 2020]
             df_test = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year >= 2020]
-            if alpha == 0.9:
-                target = np.array(df_fit['target']) * 1.1
-            elif alpha == 0.5:
+            if self.method != 'linear' and alpha == 0.9:
+                target = np.array(df_fit['target']) * 1.3
+            elif self.method != 'linear' and alpha == 0.5:
                 target = np.array(df_fit['target'])
+            elif self.method != 'linear' and alpha == 0.1:
+                target = np.array(df_fit['target']) * 0.7
             else:
-                target = np.array(df_fit['target']) * 0.9
+                target = np.array(df_fit['target'])
 
             scaler = StandardScaler()
             scaled_train = scaler.fit_transform(np.array(df_fit[features_columns]))
@@ -207,28 +234,31 @@ class CommonRegression(TrainModel):
 
     def fit(self, submission_format: pd.DataFrame, **kwargs) -> Union[str, Path]:
         """ Fit new model based on snotel """
-        metadata, path_to_snodas, path_to_snotel, path_to_teleconnections = self.load_data_from_kwargs(kwargs)
+        metadata, path_to_snodas, path_to_snotel, path_to_teleconnections, path_to_pdsi = self.load_data_from_kwargs(kwargs)
 
         for site in list(submission_format['site_id'].unique()):
             logger.info(f'Train SNOTEL {self.name} model for site: {site}')
+            pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site)
             telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site)
             snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
             snotel_df = collect_snotel_data_for_site(path_to_snotel, site)
 
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
-            self.fit_main_model(site, snodas_df, snotel_df, telecon_df, site_df)
+            self.fit_main_model(site, snodas_df, snotel_df, telecon_df, pdsi_df, site_df)
 
         return self.model_folder
 
     def _collect_data_for_model_fit(self, snodas_df: pd.DataFrame, snotel_df: pd.DataFrame, telecon_df: pd.DataFrame,
-                                    site_df: pd.DataFrame):
+                                    pdsi_df: pd.DataFrame, site_df: pd.DataFrame):
         snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
                                                   julian_column='julian_datetime', round_julian=3)
         snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                                   julian_column='julian_datetime', round_julian=3)
         telecon_df = generate_datetime_into_julian(dataframe=telecon_df, datetime_column='YEAR',
                                                    julian_column='julian_datetime', round_julian=3)
+        pdsi_df = generate_datetime_into_julian(dataframe=pdsi_df, datetime_column='datetime',
+                                                julian_column='julian_datetime', round_julian=3)
 
         dataframe_for_model_fit = []
         for year in list(set(snodas_df['datetime'].dt.year)):
@@ -237,15 +267,16 @@ class CommonRegression(TrainModel):
                 continue
             target_value = train_for_issue['volume'].values[0]
 
-            for day_of_year in np.arange(1, 220, step=15):
+            for day_of_year in np.arange(1, 220, step=5):
 
                 # Aggregate common dataset with common features
                 issue_date = datetime.datetime.strptime(f'{year} {day_of_year}', '%Y %j')
 
                 current_dataset = None
-                for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df],
-                                                       [self.aggregation_days_snodas, self.aggregation_days_snotel, 63],
-                                                       ['snodas', 'snotel', 'soi']):
+                for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
+                                                       [self.aggregation_days_snodas, self.aggregation_days_snotel, 100,
+                                                        self.aggregation_days_pdsi],
+                                                       ['snodas', 'snotel', 'soi', 'pdsi']):
                     dataset = aggregate_data_for_issue_date(issue_date, day_of_year, df, aggregation_days,
                                                             target_value, label)
                     if dataset is None:
@@ -266,7 +297,7 @@ class CommonRegression(TrainModel):
         return dataframe_for_model_fit
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        metadata, path_to_snodas, path_to_snotel, path_to_teleconnections = self.load_data_from_kwargs(kwargs)
+        metadata, path_to_snodas, path_to_snotel, path_to_teleconnections, path_to_pdsi = self.load_data_from_kwargs(kwargs)
 
         submit = []
         for site in list(submission_format['site_id'].unique()):
@@ -274,37 +305,61 @@ class CommonRegression(TrainModel):
             logger.info(f'Generate prediction for site: {site}')
 
             submission_site = self.predict_main_model(site, submission_site, path_to_snodas,
-                                                      path_to_snotel, path_to_teleconnections)
+                                                      path_to_snotel, path_to_teleconnections, path_to_pdsi)
 
             # Correct according to train data (predictions can not be higher or lower)
             site_train_data = self.train_df[self.train_df['site_id'] == site]
             min_value = min(site_train_data['volume'])
             max_value = max(site_train_data['volume'])
-            for col in ['volume_10', 'volume_50', 'volume_90']:
-                submission_site[col][submission_site[col] <= min_value] = min_value
-                submission_site[col][submission_site[col] >= max_value] = max_value
+            mean_value = site_train_data['volume'].mean()
 
-            submit.append(submission_site)
+            submission_site['volume_10'][submission_site['volume_10'] <= min_value] = min_value * 0.8
+            submission_site['volume_10'][submission_site['volume_10'] >= max_value] = min_value * 0.8
+
+            submission_site['volume_50'][submission_site['volume_50'] <= min_value] = mean_value
+            submission_site['volume_50'][submission_site['volume_50'] >= max_value] = mean_value
+
+            submission_site['volume_90'][submission_site['volume_90'] <= min_value] = max_value * 1.2
+            submission_site['volume_90'][submission_site['volume_90'] >= max_value] = max_value * 1.2
+
+            submission_site_updated = []
+            for row_id, row in submission_site.iterrows():
+                # Final forecast adjustment
+                current_min = row.volume_10
+                current_max = row.volume_90
+                current_mean = row.volume_50
+                if current_min > current_max:
+                    row.volume_10 = current_max
+                    row.volume_90 = current_min
+                if current_mean <= row.volume_10 or current_mean >= row.volume_90:
+                    row.volume_50 = (row.volume_10 + row.volume_90) / 2
+                submission_site_updated.append(pd.DataFrame(row).T)
+
+            submission_site_updated = pd.concat(submission_site_updated)
+            submit.append(submission_site_updated)
 
         submit = pd.concat(submit)
         return submit
 
-    def _collect_data_for_model_predict(self, snodas_df: pd.DataFrame, snotel_df, telecon_df, submission_site: pd.DataFrame):
+    def _collect_data_for_model_predict(self, snodas_df: pd.DataFrame, snotel_df, telecon_df, pdsi_df, submission_site: pd.DataFrame):
         snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
                                                   julian_column='julian_datetime', round_julian=3)
         snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                                   julian_column='julian_datetime', round_julian=3)
         telecon_df = generate_datetime_into_julian(dataframe=telecon_df, datetime_column='YEAR',
                                                    julian_column='julian_datetime', round_julian=3)
+        pdsi_df = generate_datetime_into_julian(dataframe=pdsi_df, datetime_column='datetime',
+                                                julian_column='julian_datetime', round_julian=3)
 
         collected_data = []
         for row_id, row in submission_site.iterrows():
             issue_date = row['issue_date']
 
             current_dataset = None
-            for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df],
-                                                   [self.aggregation_days_snodas, self.aggregation_days_snotel, 63],
-                                                   ['snodas', 'snotel', 'soi']):
+            for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
+                                                   [self.aggregation_days_snodas, self.aggregation_days_snotel, 100,
+                                                    self.aggregation_days_pdsi],
+                                                   ['snodas', 'snotel', 'soi', 'pdsi']):
                 dataset = aggregate_data_for_issue_date(issue_date, issue_date.dayofyear, df, aggregation_days,
                                                         None, label)
 
@@ -321,12 +376,15 @@ class CommonRegression(TrainModel):
         return collected_data
 
     def predict_main_model(self, site: str, submission_site: pd.DataFrame, path_to_snodas: Union[str, Path],
-                           path_to_snotel: Union[str, Path], path_to_teleconnections: Union[str, Path]):
+                           path_to_snotel: Union[str, Path], path_to_teleconnections: Union[str, Path],
+                           path_to_pdsi: Union[str, Path]):
         snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
         snotel_df = collect_snotel_data_for_site(path_to_snotel, site)
         telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site)
+        pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site)
 
-        dataframe_for_model_predict = self._collect_data_for_model_predict(snodas_df, snotel_df, telecon_df, submission_site)
+        dataframe_for_model_predict = self._collect_data_for_model_predict(snodas_df, snotel_df, telecon_df,
+                                                                           pdsi_df, submission_site)
         features_columns = list(dataframe_for_model_predict.columns)
         features_columns.remove('issue_date')
         features_columns.sort()
