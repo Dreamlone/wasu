@@ -192,11 +192,11 @@ class CommonRegression(TrainModel):
                     target = np.array(df_fit['target'])
             else:
                 if alpha == 0.9:
-                    target = np.array(df_fit['target']) * 1.04
+                    target = np.array(df_fit['target']) * 1.05
                 elif alpha == 0.5:
                     target = np.array(df_fit['target'])
                 elif alpha == 0.1:
-                    target = np.array(df_fit['target']) * 0.96
+                    target = np.array(df_fit['target']) * 0.95
                 else:
                     target = np.array(df_fit['target'])
 
@@ -253,7 +253,7 @@ class CommonRegression(TrainModel):
             logger.info(f'Train SNOTEL {self.name} model for site: {site}')
             pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site)
             telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site)
-            snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
+            snodas_df = pd.DataFrame()
             snotel_df = collect_snotel_data_for_site(path_to_snotel, site)
 
             site_df = self.train_df[self.train_df['site_id'] == site]
@@ -264,8 +264,8 @@ class CommonRegression(TrainModel):
 
     def _collect_data_for_model_fit(self, snodas_df: pd.DataFrame, snotel_df: pd.DataFrame, telecon_df: pd.DataFrame,
                                     pdsi_df: pd.DataFrame, site_df: pd.DataFrame):
-        snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
-                                                  julian_column='julian_datetime', round_julian=3)
+        # snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
+        #                                           julian_column='julian_datetime', round_julian=3)
         snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                                   julian_column='julian_datetime', round_julian=3)
         telecon_df = generate_datetime_into_julian(dataframe=telecon_df, datetime_column='YEAR',
@@ -274,22 +274,22 @@ class CommonRegression(TrainModel):
                                                 julian_column='julian_datetime', round_julian=3)
 
         dataframe_for_model_fit = []
-        for year in list(set(snodas_df['datetime'].dt.year)):
+        for year in list(set(snotel_df['date'].dt.year)):
             train_for_issue = site_df[site_df['year_as_int'] == year]
             if len(train_for_issue) < 1:
                 continue
             target_value = train_for_issue['volume'].values[0]
 
-            for day_of_year in np.arange(1, 220, step=5):
+            for day_of_year in np.arange(1, 220, step=20):
 
                 # Aggregate common dataset with common features
                 issue_date = datetime.datetime.strptime(f'{year} {day_of_year}', '%Y %j')
 
                 current_dataset = None
-                for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
-                                                       [self.aggregation_days_snodas, self.aggregation_days_snotel, 160,
-                                                        self.aggregation_days_pdsi],
-                                                       ['snodas', 'snotel', 'soi', 'pdsi']):
+                for df, aggregation_days, label in zip([snotel_df, snotel_df, telecon_df, pdsi_df],
+                                                       [self.aggregation_days_snodas,
+                                                        self.aggregation_days_snotel, 160, self.aggregation_days_pdsi],
+                                                       ['snotel', 'snotel', 'soi', 'pdsi']):
                     dataset = aggregate_data_for_issue_date(issue_date, day_of_year, df, aggregation_days,
                                                             target_value, label)
                     if dataset is None:
@@ -355,8 +355,8 @@ class CommonRegression(TrainModel):
         return submit
 
     def _collect_data_for_model_predict(self, snodas_df: pd.DataFrame, snotel_df, telecon_df, pdsi_df, submission_site: pd.DataFrame):
-        snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
-                                                  julian_column='julian_datetime', round_julian=3)
+        # snodas_df = generate_datetime_into_julian(dataframe=snodas_df, datetime_column='datetime',
+        #                                           julian_column='julian_datetime', round_julian=3)
         snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                                   julian_column='julian_datetime', round_julian=3)
         telecon_df = generate_datetime_into_julian(dataframe=telecon_df, datetime_column='YEAR',
@@ -369,10 +369,11 @@ class CommonRegression(TrainModel):
             issue_date = row['issue_date']
 
             current_dataset = None
-            for df, aggregation_days, label in zip([snodas_df, snotel_df, telecon_df, pdsi_df],
-                                                   [self.aggregation_days_snodas, self.aggregation_days_snotel, 160,
+            for df, aggregation_days, label in zip([snotel_df, snotel_df, telecon_df, pdsi_df],
+                                                   [self.aggregation_days_snodas,
+                                                    self.aggregation_days_snotel, 160,
                                                     self.aggregation_days_pdsi],
-                                                   ['snodas', 'snotel', 'soi', 'pdsi']):
+                                                   ['snotel', 'snotel', 'soi', 'pdsi']):
                 dataset = aggregate_data_for_issue_date(issue_date, issue_date.dayofyear, df, aggregation_days,
                                                         None, label)
 
@@ -391,7 +392,7 @@ class CommonRegression(TrainModel):
     def predict_main_model(self, site: str, submission_site: pd.DataFrame, path_to_snodas: Union[str, Path],
                            path_to_snotel: Union[str, Path], path_to_teleconnections: Union[str, Path],
                            path_to_pdsi: Union[str, Path]):
-        snodas_df = collect_snodas_data_for_site(path_to_snodas, site)
+        snodas_df = pd.DataFrame()
         snotel_df = collect_snotel_data_for_site(path_to_snotel, site)
         telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site)
         pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site)
