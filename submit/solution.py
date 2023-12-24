@@ -659,6 +659,6 @@ def preprocess(src_dir: Path, data_dir: Path, preprocessed_dir: Path) -> dict[Ha
     return {}
 
 
-# if __name__ == '__main__':
-#     print(predict('hungry_horse_reservoir_inflow', '2021-02-10', 1,
-#             Path('.').resolve(), Path('../data').resolve(), Path('../data').resolve()))
+if __name__ == '__main__':
+    print(predict('hungry_horse_reservoir_inflow', '2023-05-08', 1,
+            Path('.').resolve(), Path('../data').resolve(), Path('../data').resolve()))
