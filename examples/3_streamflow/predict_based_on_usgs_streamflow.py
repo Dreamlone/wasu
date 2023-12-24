@@ -18,7 +18,7 @@ def generate_forecast_based_on_streamflow():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_streamflow = Path('../../data/usgs_streamflow').resolve()
 
-    model = StreamFlowRegression(train_df=train_df, aggregation_days=200)
+    model = StreamFlowRegression(train_df=train_df, aggregation_days=45)
     predicted = model.predict(submission_format, metadata=metadata, path_to_streamflow=path_to_streamflow, vis=False)
 
     # Save into file

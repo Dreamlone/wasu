@@ -18,7 +18,7 @@ def train_streamflow_model():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_streamflow = Path('../../data/usgs_streamflow').resolve()
 
-    model = StreamFlowRegression(train_df=train_df, aggregation_days=200)
+    model = StreamFlowRegression(train_df=train_df, aggregation_days=45)
     model.fit(submission_format=submission_format,
               metadata=metadata, path_to_streamflow=path_to_streamflow, vis=False)
 

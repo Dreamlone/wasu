@@ -130,7 +130,8 @@ class StreamFlowRegression(TrainModel):
             else:
                 # Generate main model forecast
                 submission_site = self.predict_main_model(site, submission_site, path_to_streamflow)
-            submit.append(submission_site)
+
+            submit.append(self.adjust_forecast(site, submission_site))
 
         submit = pd.concat(submit)
         return submit

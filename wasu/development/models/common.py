@@ -321,35 +321,7 @@ class CommonRegression(TrainModel):
                                                       path_to_snotel, path_to_teleconnections, path_to_pdsi)
 
             # Correct according to train data (predictions can not be higher or lower)
-            site_train_data = self.train_df[self.train_df['site_id'] == site]
-            min_value = min(site_train_data['volume'])
-            max_value = max(site_train_data['volume'])
-            mean_value = site_train_data['volume'].mean()
-
-            submission_site['volume_10'][submission_site['volume_10'] <= min_value] = min_value * 0.8
-            submission_site['volume_10'][submission_site['volume_10'] >= max_value] = min_value * 0.8
-
-            submission_site['volume_50'][submission_site['volume_50'] <= min_value] = mean_value
-            submission_site['volume_50'][submission_site['volume_50'] >= max_value] = mean_value
-
-            submission_site['volume_90'][submission_site['volume_90'] <= min_value] = max_value * 1.2
-            submission_site['volume_90'][submission_site['volume_90'] >= max_value] = max_value * 1.2
-
-            submission_site_updated = []
-            for row_id, row in submission_site.iterrows():
-                # Final forecast adjustment
-                current_min = row.volume_10
-                current_max = row.volume_90
-                current_mean = row.volume_50
-                if current_min > current_max:
-                    row.volume_10 = current_max
-                    row.volume_90 = current_min
-                if current_mean <= row.volume_10 or current_mean >= row.volume_90:
-                    row.volume_50 = (row.volume_10 + row.volume_90) / 2
-                submission_site_updated.append(pd.DataFrame(row).T)
-
-            submission_site_updated = pd.concat(submission_site_updated)
-            submit.append(submission_site_updated)
+            submit.append(self.adjust_forecast(site, submission_site))
 
         submit = pd.concat(submit)
         return submit
