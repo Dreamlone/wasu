@@ -10,24 +10,22 @@ import geopandas
 import numpy as np
 import pandas as pd
 import rasterio
+from loguru import logger
 from rasterio.mask import mask
 from shapely.geometry import mapping
 
 import warnings
 warnings.filterwarnings('ignore')
 
-FEATURES = ['PNA', 'SOI', 'SOI_STANDART', 'day_of_year', 'max_Mean_PDSI', 'max_PREC_DAILY_x',
-            'max_PREC_DAILY_y', 'max_TAVG_DAILY_x', 'max_TAVG_DAILY_y', 'max_TMAX_DAILY_x',
-            'max_TMAX_DAILY_y', 'max_TMIN_DAILY_x', 'max_TMIN_DAILY_y', 'max_WTEQ_DAILY_x',
-            'max_WTEQ_DAILY_y', 'mean_Mean_PDSI', 'mean_PREC_DAILY_x', 'mean_PREC_DAILY_y',
-            'mean_TAVG_DAILY_x', 'mean_TAVG_DAILY_y', 'mean_TMAX_DAILY_x', 'mean_TMAX_DAILY_y',
-            'mean_TMIN_DAILY_x', 'mean_TMIN_DAILY_y', 'mean_WTEQ_DAILY_x', 'mean_WTEQ_DAILY_y',
-            'min_Mean_PDSI', 'min_PREC_DAILY_x', 'min_PREC_DAILY_y', 'min_TAVG_DAILY_x',
-            'min_TAVG_DAILY_y', 'min_TMAX_DAILY_x', 'min_TMAX_DAILY_y', 'min_TMIN_DAILY_x',
-            'min_TMIN_DAILY_y', 'min_WTEQ_DAILY_x', 'min_WTEQ_DAILY_y', 'sum_Mean_PDSI',
-            'sum_PREC_DAILY_x', 'sum_PREC_DAILY_y', 'sum_TAVG_DAILY_x', 'sum_TAVG_DAILY_y',
-            'sum_TMAX_DAILY_x', 'sum_TMAX_DAILY_y', 'sum_TMIN_DAILY_x', 'sum_TMIN_DAILY_y',
-            'sum_WTEQ_DAILY_x', 'sum_WTEQ_DAILY_y']
+FEATURES = ['day_of_year', 'max_Mean_PDSI', 'max_PREC_DAILY_x', 'max_PREC_DAILY_y', 'max_TAVG_DAILY_x',
+            'max_TAVG_DAILY_y', 'max_TMAX_DAILY_x', 'max_TMAX_DAILY_y', 'max_TMIN_DAILY_x', 'max_TMIN_DAILY_y',
+            'max_WTEQ_DAILY_x', 'max_WTEQ_DAILY_y', 'mean_Mean_PDSI', 'mean_PREC_DAILY_x', 'mean_PREC_DAILY_y',
+            'mean_TAVG_DAILY_x', 'mean_TAVG_DAILY_y', 'mean_TMAX_DAILY_x', 'mean_TMAX_DAILY_y', 'mean_TMIN_DAILY_x',
+            'mean_TMIN_DAILY_y', 'mean_WTEQ_DAILY_x', 'mean_WTEQ_DAILY_y', 'min_Mean_PDSI', 'min_PREC_DAILY_x',
+            'min_PREC_DAILY_y', 'min_TAVG_DAILY_x', 'min_TAVG_DAILY_y', 'min_TMAX_DAILY_x', 'min_TMAX_DAILY_y',
+            'min_TMIN_DAILY_x', 'min_TMIN_DAILY_y', 'min_WTEQ_DAILY_x', 'min_WTEQ_DAILY_y', 'sum_Mean_PDSI',
+            'sum_PREC_DAILY_x', 'sum_PREC_DAILY_y', 'sum_TAVG_DAILY_x', 'sum_TAVG_DAILY_y', 'sum_TMAX_DAILY_x',
+            'sum_TMAX_DAILY_y', 'sum_TMIN_DAILY_x', 'sum_TMIN_DAILY_y', 'sum_WTEQ_DAILY_x', 'sum_WTEQ_DAILY_y']
 
 
 NUMBER_BY_MONTH = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
@@ -464,8 +462,8 @@ def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe,
 
 def collect_features_for_prediction(site_id: str, data_dir: Path, preprocessed_dir: Path, issue_date: str):
     aggregation_days_snotel = 120
+    aggregation_days_snotel_short = 21
     aggregation_days_pdsi = 124
-    telecon_offset = 150
 
     path_to_snotel = Path(data_dir, 'snotel').resolve()
     path_to_teleconnections = Path(data_dir, 'teleconnections').resolve()
@@ -480,13 +478,6 @@ def collect_features_for_prediction(site_id: str, data_dir: Path, preprocessed_d
     pdsi_features = aggregate_data_for_issue_date(issue_date, int(issue_date.strftime('%j')), pdsi_df,
                                                   aggregation_days_pdsi,'pdsi')
 
-    # PREPARE TELECON
-    telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site_id)
-    telecon_df = generate_datetime_into_julian(dataframe=telecon_df, datetime_column='YEAR',
-                                               julian_column='julian_datetime', round_julian=3)
-    telecon_features = aggregate_data_for_issue_date(issue_date, int(issue_date.strftime('%j')), telecon_df,
-                                                     telecon_offset, 'soi')
-
     # PREPARE SNOTEL
     snotel_df = collect_snotel_data_for_site(issue_date.year, path_to_snotel, site_id)
     snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
@@ -499,9 +490,9 @@ def collect_features_for_prediction(site_id: str, data_dir: Path, preprocessed_d
     snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                               julian_column='julian_datetime', round_julian=3)
     snotel_features_short = aggregate_data_for_issue_date(issue_date, int(issue_date.strftime('%j')), snotel_df,
-                                                           21, 'snotel')
+                                                           aggregation_days_snotel_short, 'snotel')
     current_dataset = None
-    for df in [snotel_features_short, snotel_features, telecon_features, pdsi_features]:
+    for df in [snotel_features_short, snotel_features, pdsi_features]:
         if current_dataset is None:
             # First iteration
             current_dataset = df
@@ -535,29 +526,28 @@ def predict(site_id: str, issue_date: str, assets: dict[Hashable, Any],
     # Prepare features for predict (see)
     try:
         features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
+        logger.info(f'Level 1. Features was successfully prepared for {site_id} {issue_date}')
     except Exception as ex:
+        logger.info(f'Level 2. Features preparation was failed due to {ex}')
         try:
             # One week
             issue_date = datetime.datetime.strptime(issue_date, '%Y-%m-%d')
             issue_date = issue_date - datetime.timedelta(days=7)
             issue_date = issue_date.strftime('%Y-%m-%d')
             features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
+            logger.info(f'Level 2. Features was successfully prepared for {site_id} {issue_date} (delta - 7 days)')
         except Exception as ex:
+            logger.info(f'Level 3. Features preparation was failed due to {ex}')
             try:
                 # One year
                 issue_date = datetime.datetime.strptime(issue_date, '%Y-%m-%d')
                 issue_date = issue_date - datetime.timedelta(days=365)
                 issue_date = issue_date.strftime('%Y-%m-%d')
                 features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
+                logger.info(f'Level 3. Features was successfully prepared for {site_id} {issue_date} (delta - 365 days)')
             except Exception as ex:
-                try:
-                    # Two years
-                    issue_date = datetime.datetime.strptime(issue_date, '%Y-%m-%d')
-                    issue_date = issue_date - datetime.timedelta(days=365*2)
-                    issue_date = issue_date.strftime('%Y-%m-%d')
-                    features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
-                except Exception as ex:
-                    return 200.0, 400.0, 600.0
+                logger.info(f'Level 4. Features preparation was failed due to {ex}. Return bulk')
+                raise ValueError(f'Can not collect features data for model')
 
     path_to_models = Path(src_dir, 'models').resolve()
 
@@ -611,12 +601,30 @@ def extract_data_from_netcdf_file(geometry, netcdf_file) -> pd.DataFrame:
             dataframe.append([np.nanmean(filtered_values), np.nansum(filtered_values), np.nanstd(filtered_values)])
 
     dataframe = pd.DataFrame(dataframe, columns=['Mean_PDSI', 'Sum_PDSI', 'std_PDSI'])
-    dataframe['datetime'] = datetime_labels
+    if len(dataframe) != len(datetime_labels):
+        dataframe['datetime'] = datetime_labels[:len(dataframe)]
+    else:
+        dataframe['datetime'] = datetime_labels
 
     return dataframe
 
 
-def prepare_pdsi_data_as_table(data_dir: Path, preprocessed_dir: Path):
+def preprocess(src_dir: Path, data_dir: Path, preprocessed_dir: Path) -> dict[Hashable, Any]:
+    """An optional function that performs setup or processing.
+
+    Args:
+        src_dir (Path): path to the directory that your submission ZIP archive
+            contents are unzipped to.
+        data_dir (Path): path to the mounted data drive.
+        preprocessed_dir (Path): path to a directory where you can save any
+            intermediate outputs for later use.
+
+    Returns:
+        (dict[Hashable, Any]): a dictionary containing any assets you want to
+            hold in memory that will be passed to your 'predict' function as
+            the keyword argument 'assets'.
+    """
+    # First there is a need to prepare three data sources: PDSI
     spatial_objects = geopandas.read_file(Path(data_dir, 'geospatial.gpkg'))
 
     pdsi_path = Path(data_dir, 'pdsi').resolve()
@@ -646,30 +654,9 @@ def prepare_pdsi_data_as_table(data_dir: Path, preprocessed_dir: Path):
         dataframe_for_site = dataframe_for_site.sort_values(by='datetime')
 
         dataframe_for_site.to_csv(Path(pdsi_results, f'{site_id}.csv'), index=False)
-
-
-def preprocess(src_dir: Path, data_dir: Path, preprocessed_dir: Path) -> dict[Hashable, Any]:
-    """An optional function that performs setup or processing.
-
-    Args:
-        src_dir (Path): path to the directory that your submission ZIP archive
-            contents are unzipped to.
-        data_dir (Path): path to the mounted data drive.
-        preprocessed_dir (Path): path to a directory where you can save any
-            intermediate outputs for later use.
-
-    Returns:
-        (dict[Hashable, Any]): a dictionary containing any assets you want to
-            hold in memory that will be passed to your 'predict' function as
-            the keyword argument 'assets'.
-    """
-    # First there is a need to prepare three data sources: PDSI, SNODAS, SNOTEL
-    prepare_pdsi_data_as_table(data_dir, preprocessed_dir)
-    # folder_to_unpack_files = Path(preprocessed_dir, 'unpacked_snodas_archives').resolve()
-    # folder_to_unpack_files.mkdir(exist_ok=True, parents=True)
     return {}
 
 
-if __name__ == '__main__':
-    print(predict('hungry_horse_reservoir_inflow', '2023-05-08', 1,
-            Path('.').resolve(), Path('../data').resolve(), Path('../data').resolve()))
+# if __name__ == '__main__':
+#     print(predict('hungry_horse_reservoir_inflow', '2023-05-08', 1,
+#             Path('.').resolve(), Path('../data').resolve(), Path('../data').resolve()))

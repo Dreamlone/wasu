@@ -18,7 +18,6 @@ def train_common_model():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snodas = Path('../../data/snodas_csv').resolve()
     path_to_snotel = Path('../../data/snotel').resolve()
-    path_to_teleconnections = Path('../../data/teleconnections').resolve()
     path_to_pdsi = Path('../../data/pdsi_csv').resolve()
 
     model = CommonRegression(train_df=train_df, method='linear',
@@ -27,8 +26,7 @@ def train_common_model():
                              aggregation_days_pdsi=124)
 
     model.fit(submission_format, metadata=metadata,
-              path_to_snotel=path_to_snotel, path_to_snodas=path_to_snodas,
-              path_to_teleconnections=path_to_teleconnections, path_to_pdsi=path_to_pdsi,
+              path_to_snotel=path_to_snotel, path_to_snodas=path_to_snodas, path_to_pdsi=path_to_pdsi,
               vis=False)
 
 

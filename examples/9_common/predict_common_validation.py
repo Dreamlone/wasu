@@ -24,7 +24,6 @@ def generate_forecast_based_on_snotel():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snotel = Path('../../data/snotel').resolve()
     path_to_snodas = Path('../../data/snodas_csv').resolve()
-    path_to_teleconnections = Path('../../data/teleconnections').resolve()
     path_to_pdsi = Path('../../data/pdsi_csv').resolve()
 
     model = CommonRegression(train_df=train_df, method=method,
@@ -32,7 +31,7 @@ def generate_forecast_based_on_snotel():
                              aggregation_days_snotel=aggregation_days_snotel,
                              aggregation_days_pdsi=aggregation_days_pdsi)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
-                              path_to_snodas=path_to_snodas, path_to_teleconnections=path_to_teleconnections,
+                              path_to_snodas=path_to_snodas,
                               path_to_pdsi=path_to_pdsi)
 
     validator.compare_dataframes(predicted, train_df)

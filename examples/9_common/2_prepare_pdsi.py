@@ -29,7 +29,10 @@ def extract_data_from_netcdf_file(geometry, netcdf_file) -> pd.DataFrame:
             dataframe.append([np.nanmean(filtered_values), np.nansum(filtered_values), np.nanstd(filtered_values)])
 
     dataframe = pd.DataFrame(dataframe, columns=['Mean_PDSI', 'Sum_PDSI', 'std_PDSI'])
-    dataframe['datetime'] = datetime_labels
+    if len(dataframe) != len(datetime_labels):
+        dataframe['datetime'] = datetime_labels[:len(dataframe)]
+    else:
+        dataframe['datetime'] = datetime_labels
 
     return dataframe
 
