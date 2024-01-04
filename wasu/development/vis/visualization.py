@@ -32,7 +32,7 @@ class TimeSeriesPlot:
 
         # Get missing years (in test years)
         all_years = list(range(2000, 2024))
-        test_years = set(all_years) - set(list(self.train['year'].dt.year))
+        test_years = [2020, 2021, 2022]
         self.test_years = pd.DataFrame({'year': list(test_years)})
         self.test_years['volume'] = 0
         self.test_years['year'] = pd.to_datetime(self.test_years['year'], format='%Y')

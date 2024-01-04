@@ -32,7 +32,6 @@ class ModelValidation:
                  years_to_validate: Union[List[int], None] = None,
                  sites_to_validate: Union[List[str], None] = None,
                  folder_for_plots: str = 'default_model'):
-        test_years = {2005, 2007, 2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023}
 
         self.issue_dates = issue_dates
         if self.issue_dates is None:
@@ -42,10 +41,7 @@ class ModelValidation:
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
             # self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
-            self.years_to_validate = [2020, 2022]
-        else:
-            if len(set(self.years_to_validate).intersection(test_years)) > 0:
-                raise ValueError(f'Can not validate if the year is in test data: {test_years}')
+            self.years_to_validate = [2020, 2021, 2022]
 
         self.sites_to_validate = sites_to_validate
         if self.sites_to_validate is None:

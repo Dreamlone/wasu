@@ -16,7 +16,18 @@ from shapely.geometry import mapping
 import warnings
 warnings.filterwarnings('ignore')
 
-FEATURES = ['PNA', 'SOI', 'SOI_STANDART', 'day_of_year', 'max_Mean_PDSI', 'max_PREC_DAILY_x', 'max_PREC_DAILY_y', 'max_TAVG_DAILY_x', 'max_TAVG_DAILY_y', 'max_TMAX_DAILY_x', 'max_TMAX_DAILY_y', 'max_TMIN_DAILY_x', 'max_TMIN_DAILY_y', 'max_WTEQ_DAILY_x', 'max_WTEQ_DAILY_y', 'mean_Mean_PDSI', 'mean_PREC_DAILY_x', 'mean_PREC_DAILY_y', 'mean_TAVG_DAILY_x', 'mean_TAVG_DAILY_y', 'mean_TMAX_DAILY_x', 'mean_TMAX_DAILY_y', 'mean_TMIN_DAILY_x', 'mean_TMIN_DAILY_y', 'mean_WTEQ_DAILY_x', 'mean_WTEQ_DAILY_y', 'min_Mean_PDSI', 'min_PREC_DAILY_x', 'min_PREC_DAILY_y', 'min_TAVG_DAILY_x', 'min_TAVG_DAILY_y', 'min_TMAX_DAILY_x', 'min_TMAX_DAILY_y', 'min_TMIN_DAILY_x', 'min_TMIN_DAILY_y', 'min_WTEQ_DAILY_x', 'min_WTEQ_DAILY_y', 'sum_Mean_PDSI', 'sum_PREC_DAILY_x', 'sum_PREC_DAILY_y', 'sum_TAVG_DAILY_x', 'sum_TAVG_DAILY_y', 'sum_TMAX_DAILY_x', 'sum_TMAX_DAILY_y', 'sum_TMIN_DAILY_x', 'sum_TMIN_DAILY_y', 'sum_WTEQ_DAILY_x', 'sum_WTEQ_DAILY_y']
+FEATURES = ['PNA', 'SOI', 'SOI_STANDART', 'day_of_year', 'max_Mean_PDSI', 'max_PREC_DAILY_x',
+            'max_PREC_DAILY_y', 'max_TAVG_DAILY_x', 'max_TAVG_DAILY_y', 'max_TMAX_DAILY_x',
+            'max_TMAX_DAILY_y', 'max_TMIN_DAILY_x', 'max_TMIN_DAILY_y', 'max_WTEQ_DAILY_x',
+            'max_WTEQ_DAILY_y', 'mean_Mean_PDSI', 'mean_PREC_DAILY_x', 'mean_PREC_DAILY_y',
+            'mean_TAVG_DAILY_x', 'mean_TAVG_DAILY_y', 'mean_TMAX_DAILY_x', 'mean_TMAX_DAILY_y',
+            'mean_TMIN_DAILY_x', 'mean_TMIN_DAILY_y', 'mean_WTEQ_DAILY_x', 'mean_WTEQ_DAILY_y',
+            'min_Mean_PDSI', 'min_PREC_DAILY_x', 'min_PREC_DAILY_y', 'min_TAVG_DAILY_x',
+            'min_TAVG_DAILY_y', 'min_TMAX_DAILY_x', 'min_TMAX_DAILY_y', 'min_TMIN_DAILY_x',
+            'min_TMIN_DAILY_y', 'min_WTEQ_DAILY_x', 'min_WTEQ_DAILY_y', 'sum_Mean_PDSI',
+            'sum_PREC_DAILY_x', 'sum_PREC_DAILY_y', 'sum_TAVG_DAILY_x', 'sum_TAVG_DAILY_y',
+            'sum_TMAX_DAILY_x', 'sum_TMAX_DAILY_y', 'sum_TMIN_DAILY_x', 'sum_TMIN_DAILY_y',
+            'sum_WTEQ_DAILY_x', 'sum_WTEQ_DAILY_y']
 
 
 NUMBER_BY_MONTH = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
@@ -452,7 +463,7 @@ def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe,
 
 
 def collect_features_for_prediction(site_id: str, data_dir: Path, preprocessed_dir: Path, issue_date: str):
-    aggregation_days_snotel = 90
+    aggregation_days_snotel = 120
     aggregation_days_pdsi = 124
     telecon_offset = 150
 
@@ -488,7 +499,7 @@ def collect_features_for_prediction(site_id: str, data_dir: Path, preprocessed_d
     snotel_df = generate_datetime_into_julian(dataframe=snotel_df, datetime_column='date',
                                               julian_column='julian_datetime', round_julian=3)
     snotel_features_short = aggregate_data_for_issue_date(issue_date, int(issue_date.strftime('%j')), snotel_df,
-                                                           4, 'snotel')
+                                                           21, 'snotel')
     current_dataset = None
     for df in [snotel_features_short, snotel_features, telecon_features, pdsi_features]:
         if current_dataset is None:

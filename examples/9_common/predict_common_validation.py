@@ -12,8 +12,8 @@ warnings.filterwarnings('ignore')
 
 def generate_forecast_based_on_snotel():
     method = 'linear'
-    aggregation_days_snodas = 4
-    aggregation_days_snotel = 90
+    aggregation_days_snodas = 21
+    aggregation_days_snotel = 120
     aggregation_days_pdsi = 124
     validator = ModelValidation(folder_for_plots='common')
 

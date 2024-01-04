@@ -22,8 +22,8 @@ def train_common_model():
     path_to_pdsi = Path('../../data/pdsi_csv').resolve()
 
     model = CommonRegression(train_df=train_df, method='linear',
-                             aggregation_days_snodas=4,
-                             aggregation_days_snotel=90,
+                             aggregation_days_snodas=21,
+                             aggregation_days_snotel=120,
                              aggregation_days_pdsi=124)
 
     model.fit(submission_format, metadata=metadata,

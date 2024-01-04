@@ -5,6 +5,7 @@ import warnings
 import pandas as pd
 
 from wasu.development.models.common import CommonRegression
+from wasu.development.validation import ModelValidation
 from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
@@ -12,11 +13,11 @@ warnings.filterwarnings('ignore')
 
 def generate_forecast_based_on_snotel():
     method = 'linear'
-    aggregation_days_snodas = 14
-    aggregation_days_snotel = 110
-    aggregation_days_pdsi = 180
+    aggregation_days_snodas = 21
+    aggregation_days_snotel = 120
+    aggregation_days_pdsi = 124
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
-    submission_format = pd.read_csv(Path('../../data/submission_format.csv'), parse_dates=['issue_date'])
+    submission_format = ModelValidation(folder_for_plots='common').generate_submission_format()
 
     # Load dataframe with metadata
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
