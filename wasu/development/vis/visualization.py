@@ -41,6 +41,7 @@ class TimeSeriesPlot:
         """ Calculate actual volume per season for test and launch algorithm """
         plots_folder = Path(path_to_plots_folder(), plots_folder_name)
         plots_folder.mkdir(exist_ok=True, parents=True)
+        offset_for_visualizations = pd.DateOffset(months=7)
 
         for site in list(self.submission_format['site_id'].unique()):
             predicted_site = predicted[predicted['site_id'] == site]
@@ -50,17 +51,20 @@ class TimeSeriesPlot:
 
             fig_size = (20.0, 8.0)
             fig, ax = plt.subplots(figsize=fig_size)
-            plt.plot(pd.to_datetime(cumulative['forecast_year']), cumulative['volume'], color='green',
+            plt.plot(pd.to_datetime(cumulative['forecast_year']) + offset_for_visualizations,
+                     cumulative['volume'], color='green',
                      label='Naturalized flow', alpha=0.4)
-            plt.plot(pd.to_datetime(train_site_df['year']), train_site_df['volume'], '-ok', color='orange',
-                     label='Train sample')
+            plt.plot(pd.to_datetime(train_site_df['year']) + offset_for_visualizations,
+                     train_site_df['volume'], '-ok', color='orange',
+                     label='Train sample (actual values)')
             plt.plot(pd.to_datetime(predicted_site['issue_date']), predicted_site['volume_50'], '-ok', color='blue',
-                     label='Predicted volume', linewidth=2, linestyle='--')
+                     label='Predicted volume (at issue date)', linewidth=2, linestyle='--')
             plt.plot(pd.to_datetime(predicted_site['issue_date']), predicted_site['volume_10'],
                      color='blue', linewidth=1)
             plt.plot(pd.to_datetime(predicted_site['issue_date']), predicted_site['volume_90'], color='blue',
                      linewidth=1)
-            plt.scatter(self.test_years['year'], self.test_years['volume'], color='black',
+            plt.scatter(self.test_years['year'] + offset_for_visualizations,
+                        self.test_years['volume'], color='black',
                         label='Test years', s=140, alpha=0.6, marker="s")
             plt.xlim(min(self.test_years['year']) - pd.DateOffset(years=1),
                      max(self.test_years['year']) + pd.DateOffset(years=1))

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
+from sklearn.linear_model import QuantileRegressor
 
 from wasu.development.data.streamflow import collect_usgs_streamflow_time_series_for_site
 from wasu.development.models.create import ModelsCreator
@@ -99,8 +100,7 @@ class StreamFlowRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha,
-                                min_data_in_leaf=10, min_child_samples=10, verbose=-1)
+            reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
             reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
                     np.array(dataframe_for_model_fit['target']))
 
@@ -129,7 +129,14 @@ class StreamFlowRegression(TrainModel):
                 submission_site = self.predict_backup_model(site, submission_site)
             else:
                 # Generate main model forecast
-                submission_site = self.predict_main_model(site, submission_site, path_to_streamflow)
+                try:
+                    submission_site = self.predict_main_model(site, submission_site, path_to_streamflow)
+                except Exception as ex:
+                    logger.info(f'Cannot use main model for site {site} due to {ex}. Apply Backup model')
+                    site_df = self.train_df[self.train_df['site_id'] == site]
+                    site_df = site_df.sort_values(by='year')
+                    self.fit_backup_model(site=site, site_df=site_df)
+                    submission_site = self.predict_backup_model(site, submission_site)
 
             submit.append(self.adjust_forecast(site, submission_site))
 

@@ -73,7 +73,8 @@ class ModelValidation:
         df['issue_date'] = pd.to_datetime(df['issue_date'])
         return df
 
-    def compare_dataframes(self, predicted: pd.DataFrame, train_data: pd.DataFrame):
+    def compare_dataframes(self, predicted: pd.DataFrame, train_data: pd.DataFrame,
+                           save_predicted_vs_actual_into_file: Union[Path, str, None] = None):
         """ Take predictions and compare it with known values """
         all_values = []
         for site_to_validate in self.sites_to_validate:
@@ -103,6 +104,13 @@ class ModelValidation:
         all_values = pd.concat(all_values)
         self._print_metrics(all_values, 'all')
         self._make_plots(all_values, 'all')
+        if save_predicted_vs_actual_into_file is not None:
+            if isinstance(save_predicted_vs_actual_into_file, str) is True:
+                save_predicted_vs_actual_into_file = Path(save_predicted_vs_actual_into_file)
+            save_predicted_vs_actual_into_file = save_predicted_vs_actual_into_file.resolve()
+
+            save_predicted_vs_actual_into_file.parent.mkdir(parents=True, exist_ok=True)
+            all_values.to_csv(save_predicted_vs_actual_into_file, index=False)
 
     @staticmethod
     def _print_metrics(df_for_comparison: pd.DataFrame, site_to_validate: str):
