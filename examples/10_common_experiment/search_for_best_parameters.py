@@ -7,7 +7,9 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
 from wasu.development.validation import smape
 
@@ -27,83 +29,87 @@ SITES = ['hungry_horse_reservoir_inflow',
          'owyhee_r_bl_owyhee_dam']
 
 
-def create_optimal_surfaces_plots(report_with_metrics: pd.DataFrame, best_solutions: pd.DataFrame):
+def create_optimal_surfaces_plots(report_with_metrics: pd.DataFrame, best_solutions: pd.DataFrame, metric_name: str):
     """ Draw a 3d plot """
     plots_folder = Path('./optimum').resolve()
     plots_folder.mkdir(parents=True, exist_ok=True)
 
     for site in SITES:
         site_df = best_solutions[best_solutions['site'] == site]
-        pdsi_days_optimal = site_df.iloc[0]['SNOTEL short days']
+        snotel_short_days_optimal = site_df.iloc[0]['SNOTEL short days']
 
-        pdsi_fixed = report_with_metrics[report_with_metrics['SNOTEL short days'] == pdsi_days_optimal]
-        reg = GaussianProcessRegressor(alpha=0.4)
+        snotel_short_day_fixed = report_with_metrics[report_with_metrics['SNOTEL short days'] == snotel_short_days_optimal]
+        reg = LinearRegression()
         features = ['PDSI days', 'SNOTEL long days']
         scaler = StandardScaler()
-        scaler.fit(np.array(pdsi_fixed[features]))
-        reg.fit(scaler.transform(np.array(pdsi_fixed[features])),
-                np.array(pdsi_fixed[site]))
+        scaler.fit(np.array(snotel_short_day_fixed[features]))
+        poly = PolynomialFeatures(degree=6)
+        poly.fit(scaler.transform(np.array(snotel_short_day_fixed[features])))
+        reg.fit(poly.transform(scaler.transform(np.array(snotel_short_day_fixed[features]))),
+                np.array(snotel_short_day_fixed[site]))
 
-        first_feature_simulated = np.arange(min(pdsi_fixed['PDSI days']) + 1,
-                                            max(pdsi_fixed['PDSI days']) - 1, 0.1)
-        second_feature_simulated = np.arange(min(pdsi_fixed['SNOTEL long days']) + 1,
-                                             max(pdsi_fixed['SNOTEL long days']) - 1, 0.06)
+        first_feature_simulated = np.linspace(min(snotel_short_day_fixed['PDSI days']) + 1,
+                                              max(snotel_short_day_fixed['PDSI days']) - 1, 300)
+        second_feature_simulated = np.linspace(min(snotel_short_day_fixed['SNOTEL long days']) + 1,
+                                               max(snotel_short_day_fixed['SNOTEL long days']) - 1, 300)
         features_ = []
         for long_snotel in second_feature_simulated:
             constant_cpu = [long_snotel] * len(first_feature_simulated)
             features_.append(pd.DataFrame({'PDSI days': first_feature_simulated,
                                            'SNOTEL long days': constant_cpu}))
         features_ = pd.concat(features_)
-        features_['predicted'] = reg.predict(scaler.transform(np.array(features_[features])))
+        features_['predicted'] = reg.predict(poly.transform(scaler.transform(np.array(features_[features]))))
 
         fig = plt.figure(figsize=(20, 9))
         # First plot
         ax = fig.add_subplot(121, projection='3d')
         ax.scatter(np.array(features_['PDSI days']),
                    np.array(features_['SNOTEL long days']),
-                   np.array(features_['predicted']),
-                   c='Grey', s=2, linewidth=0, alpha=0.1)
+                   np.array(features_['predicted']), c=np.array(features_['predicted']),
+                   cmap='coolwarm', s=2, linewidth=0, alpha=0.3, vmin=min(snotel_short_day_fixed[site]),
+                   vmax=max(snotel_short_day_fixed[site]))
         ax.scatter(np.array(site_df['PDSI days']),
                    np.array(site_df['SNOTEL long days']),
                    np.array(site_df['metric']),
                    s=150, edgecolors='red', c='white',
                    alpha=0.8, linewidth=0.9)
-        surf = ax.scatter(np.array(pdsi_fixed['PDSI days']),
-                          np.array(pdsi_fixed['SNOTEL long days']),
-                          np.array(pdsi_fixed[site]),
-                          c=np.array(pdsi_fixed[site]), cmap='Reds', s=35,
+        surf = ax.scatter(np.array(snotel_short_day_fixed['PDSI days']),
+                          np.array(snotel_short_day_fixed['SNOTEL long days']),
+                          np.array(snotel_short_day_fixed[site]),
+                          c=np.array(snotel_short_day_fixed[site]), cmap='coolwarm', s=35,
                           linewidth=0.3, alpha=0.9, edgecolors='black')
         cb = fig.colorbar(surf, shrink=0.3, aspect=10)
-        cb.set_label('Metric for optimization', fontsize=12)
+        cb.set_label(f'Metric for optimization: {metric_name}', fontsize=12)
 
         ax.view_init(5, 100)
         ax.set_xlabel('PDSI days', fontsize=13)
         ax.set_ylabel('SNOTEL long days', fontsize=13)
-        ax.set_zlabel(f'Metric', fontsize=13)
+        ax.set_zlabel(metric_name, fontsize=13)
 
         # Second plot
         ax = fig.add_subplot(122, projection='3d')
         ax.scatter(np.array(features_['PDSI days']),
                    np.array(features_['SNOTEL long days']),
-                   np.array(features_['predicted']),
-                   c='Grey', s=2, linewidth=0, alpha=0.1)
+                   np.array(features_['predicted']), c=np.array(features_['predicted']),
+                   cmap='coolwarm', s=2, linewidth=0, alpha=0.3, vmin=min(snotel_short_day_fixed[site]),
+                   vmax=max(snotel_short_day_fixed[site]))
         ax.scatter(np.array(site_df['PDSI days']),
                    np.array(site_df['SNOTEL long days']),
                    np.array(site_df['metric']),
                    s=150, edgecolors='red', c='white',
                    alpha=0.8, linewidth=0.9)
-        ax.scatter(np.array(pdsi_fixed['PDSI days']),
-                   np.array(pdsi_fixed['SNOTEL long days']),
-                   np.array(pdsi_fixed[site]),
-                   c=np.array(pdsi_fixed[site]), cmap='Reds', s=35,
+        ax.scatter(np.array(snotel_short_day_fixed['PDSI days']),
+                   np.array(snotel_short_day_fixed['SNOTEL long days']),
+                   np.array(snotel_short_day_fixed[site]),
+                   c=np.array(snotel_short_day_fixed[site]), cmap='coolwarm', s=35,
                    linewidth=0.3, alpha=0.9,
                    edgecolors='black')
         # 30, 80
         ax.view_init(40, 110)
         ax.set_xlabel('PDSI days', fontsize=13)
         ax.set_ylabel('SNOTEL long days', fontsize=13)
-        ax.set_zlabel('Metric', fontsize=13)
-        fig.suptitle(f'Site {site}. SNOTEL short days {pdsi_days_optimal}', fontsize=15)
+        ax.set_zlabel(metric_name, fontsize=13)
+        fig.suptitle(f'Site {site}. SNOTEL short days {snotel_short_days_optimal}', fontsize=15)
         fig.savefig(Path(plots_folder, f'{site}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -146,6 +152,10 @@ def calculate_metric(dataframe: pd.DataFrame, metric_name: str):
         smape_metric = smape(y_true=np.array(dataframe['actual'], dtype=float),
                              y_pred=np.array(dataframe['volume_50'], dtype=float))
         return smape_metric
+    elif metric_name == 'MAE':
+        mae_metric = mean_absolute_error(y_true=np.array(dataframe['actual'], dtype=float),
+                                         y_pred=np.array(dataframe['volume_50'], dtype=float))
+        return mae_metric
 
     return 0.1
 
@@ -196,8 +206,8 @@ def search_for_optimum(metric_name: str = 'SMAPE'):
     best_solutions = find_best_solution(report_with_metrics)
 
     # Start 3d plotting the results
-    create_optimal_surfaces_plots(report_with_metrics, best_solutions)
+    create_optimal_surfaces_plots(report_with_metrics, best_solutions, metric_name)
 
 
 if __name__ == '__main__':
-    search_for_optimum()
+    search_for_optimum('SMAPE')
