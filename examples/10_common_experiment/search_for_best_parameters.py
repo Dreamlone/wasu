@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import warnings
@@ -11,6 +12,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
+from wasu.development.paths import get_models_path
 from wasu.development.validation import smape
 
 warnings.filterwarnings('ignore')
@@ -160,6 +162,30 @@ def calculate_metric(dataframe: pd.DataFrame, metric_name: str):
     return 0.1
 
 
+def compose_folder_with_models(best_solutions: pd.DataFrame):
+    """ Copy models from one folder to final one """
+    logger.info(f'Compose best solutions into one folder')
+
+    models_folder = Path('./models').resolve()
+    if models_folder.is_dir() and models_folder.exists():
+        shutil.rmtree(models_folder)
+    models_folder.mkdir(parents=True, exist_ok=True)
+
+    for row_id, row in best_solutions.iterrows():
+        if row["site"] == 'average':
+            continue
+
+        model_id = f'common_linear_{row["SNOTEL short days"]}_{row["SNOTEL long days"]}_{row["PDSI days"]}'
+        model_path = Path(get_models_path(), model_id)
+
+        for quantile in ['0_1', '0_5', '0_9']:
+            source_path = Path(model_path, f'model_{row["site"]}_{quantile}.pkl')
+            shutil.copyfile(source_path, Path(models_folder, f'model_{row["site"]}_{quantile}.pkl'))
+
+            source_path = Path(model_path, f'scaler_{row["site"]}_{quantile}.pkl')
+            shutil.copyfile(source_path, Path(models_folder, f'scaler_{row["site"]}_{quantile}.pkl'))
+
+
 def search_for_optimum(metric_name: str = 'SMAPE'):
     path_to_results = Path('./validation').resolve()
     files = list(path_to_results.iterdir())
@@ -204,6 +230,9 @@ def search_for_optimum(metric_name: str = 'SMAPE'):
 
     # Find the best solution per site and for all cases
     best_solutions = find_best_solution(report_with_metrics)
+
+    # Create a folder with all best models
+    compose_folder_with_models(best_solutions)
 
     # Start 3d plotting the results
     create_optimal_surfaces_plots(report_with_metrics, best_solutions, metric_name)
