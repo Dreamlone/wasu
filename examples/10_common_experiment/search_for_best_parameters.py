@@ -1,3 +1,4 @@
+import json
 import shutil
 from pathlib import Path
 
@@ -29,6 +30,14 @@ SITES = ['hungry_horse_reservoir_inflow',
          'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
          'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
          'owyhee_r_bl_owyhee_dam']
+
+
+def compute_quantile_loss(y_true, y_pred, quantile):
+    """
+    URL: https://ethen8181.github.io/machine-learning/ab_tests/quantile_regression/quantile_regression.html
+    """
+    residual = y_true - y_pred
+    return np.mean(np.maximum(quantile * residual, (quantile - 1) * residual))
 
 
 def create_optimal_surfaces_plots(report_with_metrics: pd.DataFrame, best_solutions: pd.DataFrame, metric_name: str):
@@ -158,6 +167,14 @@ def calculate_metric(dataframe: pd.DataFrame, metric_name: str):
         mae_metric = mean_absolute_error(y_true=np.array(dataframe['actual'], dtype=float),
                                          y_pred=np.array(dataframe['volume_50'], dtype=float))
         return mae_metric
+    elif metric_name == 'Quantile loss':
+        metric_low = compute_quantile_loss(y_true=np.array(dataframe['actual']),
+                                           y_pred=np.array(dataframe['volume_10']), quantile=0.1)
+        metric_mean = compute_quantile_loss(y_true=np.array(dataframe['actual']),
+                                            y_pred=np.array(dataframe['volume_50']), quantile=0.5)
+        metric_high = compute_quantile_loss(y_true=np.array(dataframe['actual']),
+                                            y_pred=np.array(dataframe['volume_90']), quantile=0.9)
+        return (metric_low + metric_mean + metric_high) / 3
 
     return 0.1
 
@@ -171,6 +188,7 @@ def compose_folder_with_models(best_solutions: pd.DataFrame):
         shutil.rmtree(models_folder)
     models_folder.mkdir(parents=True, exist_ok=True)
 
+    aggregation_per_site = {}
     for row_id, row in best_solutions.iterrows():
         if row["site"] == 'average':
             continue
@@ -184,6 +202,14 @@ def compose_folder_with_models(best_solutions: pd.DataFrame):
 
             source_path = Path(model_path, f'scaler_{row["site"]}_{quantile}.pkl')
             shutil.copyfile(source_path, Path(models_folder, f'scaler_{row["site"]}_{quantile}.pkl'))
+
+        aggregation_per_site.update({row["site"]: {"SNOTEL short days": row["SNOTEL short days"],
+                                                   "SNOTEL long days": row["SNOTEL long days"],
+                                                   "PDSI days": row["PDSI days"]}})
+
+    # Save result into JSON file
+    with open(Path(Path('.').resolve(), 'optimum_parameters.json'), 'w') as f:
+        json.dump(aggregation_per_site, f)
 
 
 def search_for_optimum(metric_name: str = 'SMAPE'):
@@ -239,4 +265,4 @@ def search_for_optimum(metric_name: str = 'SMAPE'):
 
 
 if __name__ == '__main__':
-    search_for_optimum('SMAPE')
+    search_for_optimum('Quantile loss')
