@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_streamflow():
-    aggregation_days = 120
+    aggregation_days = 40
     validation_year = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     # submission_format = pd.read_csv(Path('../../data/submission_format.csv'), parse_dates=['issue_date'])

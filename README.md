@@ -2,11 +2,28 @@
 
 Water Supply Forecast competition model
 
+Competition URL: [Water Supply Forecast Rodeo](https://www.drivendata.org/competitions/group/reclamation-water-supply-forecast/)
+
 ## How to use this repository
 
 This repository contains code both for preparing visualisations 
 and for training and applying predictive models.
 
+Load the data and put it into data `folder`: 
+
+- `grace_indicators` folder: (FY2009, FY2010, ...)
+- `pdsi` folder: (FY2009, FY2010, ...)
+- `snodas` folder: (FY2009, FY2010, ...)
+- `teleconnections` folder: (mjo.txt, nino_regions_sst.txt, oni.txt, pdo.txt, pna.txt, soi.txt)
+- `usgs_streamflow` folder: (FY1990, FY1991, ...)
+- `geospatial.gpkg`
+- `metadata_TdPVeJC.csv`
+- `submission_format.csv`
+- `test_monthly_naturalized_flow.csv`
+- `train.csv`
+- `train_monthly_naturalized_flow.csv`
+
+After that repository is ready for experiments and data exploration
 It is recommended to start exploration with [examples](./examples) folder:
 
 - [1_basic](./examples/1_basic) - basic scripts that prepare exploratory data visualisations
@@ -72,21 +89,24 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 |                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
 |:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
-|                  MAE metric                  |         264.20          | 268.54                  | 272.09                   |
-|                 MAPE metric                  |          41.48          | 42.01                   | 42.10                    |
-|            Symmetric MAPE metric             |          36.89          | 37.36                   | 37.76                    |
-|             Quantile loss metric             |         180.52          | 182.50                  | 184.11                   |
-| Quantile loss metric (only for 0.5 quantile) |         264.20          | 268.54                  | 272.09                   |
+|                  MAE metric                  |       **264.20**        | 268.54                  | 272.09                   |
+|                 MAPE metric                  |        **41.48**        | 42.01                   | 42.10                    |
+|            Symmetric MAPE metric             |        **36.89**        | 37.36                   | 37.76                    |
+|             Quantile loss metric             |       **180.52**        | 182.50                  | 184.11                   |
+| Quantile loss metric (only for 0.5 quantile) |       **264.20**        | 268.54                  | 272.09                   |
 
 This approach uses flow values aggregated over a 
 specific period (for example 40, 80 or 120 days before the forecast issue date) 
 to generate a forecast into the future. 
 
+![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fusgs_streamflow_plots%2Fanimas_r_at_durango_time_series_plot.png)
+
+Figure 4. Representation of USGS streamflow data for `animas_r_at_durango` and actual values
+
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fanimas_r_at_durango_time_series_plot.png)
 
-Figure 4. Forecasts for tests years for site `animas_r_at_durango` using USGS streamflow based model
-
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fusgs_streamflow_plots%2Fanimas_r_at_durango_time_series_plot.png)
+Figure 5. Forecasts for tests years for site `animas_r_at_durango` using USGS 
+streamflow based model (aggregation days: 40, kernel model - `QuantileRegressor`)
 
 ### SNOTEL-based predictions
 

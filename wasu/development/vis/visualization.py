@@ -85,6 +85,7 @@ class TimeSeriesPlot:
             path_to_folder = Path(path_to_folder)
 
         path_to_folder = path_to_folder.resolve()
+        offset_for_visualizations = pd.DateOffset(months=7)
 
         for site in list(self.metadata['site_id'].unique()):
             logger.debug(f'Created USGS plot for {site}')
@@ -99,27 +100,22 @@ class TimeSeriesPlot:
             fig, ax1 = plt.subplots(figsize=fig_size)
             ax1.set_xlabel('Datetime')
             ax1.set_ylabel('Volume')
-            ax1.plot(pd.to_datetime(cumulative['forecast_year']), cumulative['volume'], color='green',
-                     label='Naturalized flow', alpha=0.4)
-            ax1.plot(pd.to_datetime(train_site_df['year']), train_site_df['volume'], '-ok', color='orange',
-                     label='Train sample')
-            ax1.scatter(self.test_years['year'], self.test_years['volume'], color='black',
-                        label='Test years', s=140, alpha=0.6, marker="s")
+            ax1.plot(pd.to_datetime(cumulative['forecast_year']) + offset_for_visualizations,
+                     cumulative['volume'], color='green', label='Naturalized flow', alpha=0.4)
+            ax1.plot(pd.to_datetime(train_site_df['year']) + offset_for_visualizations,
+                     train_site_df['volume'], '-ok', color='orange', label='Train sample')
             ax1.tick_params(axis='y')
             ax1.legend()
-            plt.xlim(min(self.test_years['year']) - pd.DateOffset(years=1),
-                     max(self.test_years['year']) - pd.DateOffset(years=5))
+            plt.xlim(min(self.test_years['year']), max(self.test_years['year']))
             plt.grid(c='#DCDCDC')
 
             ax2 = ax1.twinx()
             ax2.set_ylabel('USGS Streamflow')
             ax2.plot(pd.to_datetime(streamflow_df['datetime']), streamflow_df['00060_Mean'], color='blue', linestyle='--')
-            plt.xlim(min(streamflow_df['datetime']), max(streamflow_df['datetime']))
             ax2.tick_params(axis='y')
             plt.title(f"USGS Streamflow for site {site}")
-            plt.xlim(min(self.test_years['year']) - pd.DateOffset(years=1),
-                     max(self.test_years['year']) - pd.DateOffset(years=5))
             plt.savefig(Path(plots_folder, f'{site}_time_series_plot.png'))
+            plt.xlim(min(self.test_years['year']), max(self.test_years['year']))
             plt.close()
 
     def _obtain_data_for_site(self, site: str):
