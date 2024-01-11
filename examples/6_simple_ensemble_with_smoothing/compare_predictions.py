@@ -1,15 +1,12 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 import warnings
 from loguru import logger
 from matplotlib import pyplot as plt
 
-from wasu.development.models.train_model import TrainModel
 from wasu.development.paths import path_to_examples_folder
-from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
 
@@ -26,6 +23,7 @@ SITES_TO_SHOW = ['hungry_horse_reservoir_inflow', 'snake_r_nr_heise', 'pueblo_re
                  'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
                  'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
                  'owyhee_r_bl_owyhee_dam']
+
 
 def compare_predictions():
     """ Create plots about different predictions

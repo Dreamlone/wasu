@@ -8,6 +8,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
 from sklearn.linear_model import LinearRegression, QuantileRegressor
+from sklearn.preprocessing import StandardScaler
 
 from wasu.development.data.snotel import collect_snotel_data_for_site
 from wasu.development.models.create import ModelsCreator
@@ -41,7 +42,8 @@ class SnotelFlowRegression(TrainModel):
     """ Create forecasts based on streamflow USGS data """
 
     def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90,
-                 enable_spatial_aggregation: bool = True, collect_only_in_basin: bool = False):
+                 enable_spatial_aggregation: bool = True, collect_only_in_basin: bool = False,
+                 train_test_split_year: int = 2015):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
@@ -61,6 +63,7 @@ class SnotelFlowRegression(TrainModel):
 
         self.name = f'snotel_{aggregation_days}_spatial_{self.enable_spatial_aggregation}_basin_{self.collect_only_in_basin}'
         self.model_folder = ModelsCreator(self.name).model_folder()
+        self.train_test_split_year = train_test_split_year
 
     def load_data_from_kwargs(self, kwargs):
         metadata: pd.DataFrame = kwargs['metadata']
@@ -92,27 +95,39 @@ class SnotelFlowRegression(TrainModel):
 
     def fit_main_model(self, site: str, snotel_df: pd.DataFrame, site_df: pd.DataFrame):
         dataframe_for_model_fit = self._collect_data_for_model_fit(snotel_df, site_df)
+        dataframe_for_model_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year <= self.train_test_split_year]
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, max_depth=105,
-                                min_data_in_leaf=10, min_child_samples=10, verbose=-1, n_estimators=25)
-            reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
-                    np.array(dataframe_for_model_fit['target']))
+            if alpha == 0.5:
+                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
+            else:
+                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.08)
 
-            smape_metric = smape(y_true=reg.predict(np.array(dataframe_for_model_fit[self.features_columns])),
-                                 y_pred=np.array(dataframe_for_model_fit['target'], dtype=float))
-            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}. SMAPE: {smape_metric}')
+            scaler = StandardScaler()
+            scaled_train = scaler.fit_transform(np.array(dataframe_for_model_fit[self.features_columns]))
+
+            reg.fit(scaled_train, np.array(dataframe_for_model_fit['target']))
+
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
+
             if self.vis is True:
                 created_spatial_plot(dataframe_for_model_fit, reg, self.features_columns,
                                      self.name, f'{site}_alpha_{alpha}.png',
                                      f'SNOTEL regression model {site}. Alpha: {alpha}')
+
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
             with open(model_path, 'wb') as pkl:
                 pickle.dump(reg, pkl)
 
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+            with open(scaler_path, 'wb') as pkl:
+                pickle.dump(scaler, pkl)
+
     def _collect_data_for_model_fit(self, snotel_df: pd.DataFrame, site_df: pd.DataFrame):
+
         if self.enable_spatial_aggregation is not None and self.enable_spatial_aggregation is True:
             # Calculate mean values per basin
             snotel_df = snotel_df.groupby('date').agg({'PREC_DAILY': 'mean', 'TAVG_DAILY': 'mean',
@@ -198,13 +213,19 @@ class SnotelFlowRegression(TrainModel):
         dataframe_for_model_predict = self._collect_data_for_model_predict(snotel_df, submission_site)
 
         for alpha, column_name in zip([0.1, 0.5, 0.9], ['volume_10', 'volume_50', 'volume_90']):
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+
+            with open(scaler_path, 'rb') as pkl:
+                scaler = pickle.load(pkl)
+
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
 
             with open(model_path, 'rb') as pkl:
                 model = pickle.load(pkl)
 
-            predicted = model.predict(np.array(dataframe_for_model_predict[self.features_columns]))
+            predicted = model.predict(scaler.transform(np.array(dataframe_for_model_predict[self.features_columns])))
             submission_site[column_name] = predicted
 
         return submission_site

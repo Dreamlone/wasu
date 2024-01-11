@@ -8,6 +8,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
 from sklearn.linear_model import QuantileRegressor
+from sklearn.preprocessing import StandardScaler
 
 from wasu.development.data.streamflow import collect_usgs_streamflow_time_series_for_site
 from wasu.development.models.create import ModelsCreator
@@ -104,18 +105,27 @@ class StreamFlowRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
-            reg.fit(np.array(dataframe_for_model_fit[self.features_columns]),
-                    np.array(dataframe_for_model_fit['target']))
+            if alpha == 0.5:
+                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
+            else:
+                reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.08)
 
-            smape_metric = smape(y_true=reg.predict(np.array(dataframe_for_model_fit[self.features_columns])),
-                                 y_pred=np.array(dataframe_for_model_fit['target'], dtype=float))
-            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}. SMAPE: {smape_metric}')
+            scaler = StandardScaler()
+            scaled_train = scaler.fit_transform(np.array(dataframe_for_model_fit[self.features_columns]))
+
+            reg.fit(scaled_train, np.array(dataframe_for_model_fit['target']))
+
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
 
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
             with open(model_path, 'wb') as pkl:
                 pickle.dump(reg, pkl)
+
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+            with open(scaler_path, 'wb') as pkl:
+                pickle.dump(scaler, pkl)
 
     def predict(self, submission_format: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """ Generate prediction model """
@@ -165,13 +175,19 @@ class StreamFlowRegression(TrainModel):
         dataframe_for_model_predict = self._collect_data_for_model_predict(streamflow_df, submission_site)
 
         for alpha, column_name in zip([0.1, 0.5, 0.9], ['volume_10', 'volume_50', 'volume_90']):
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+
+            with open(scaler_path, 'rb') as pkl:
+                scaler = pickle.load(pkl)
+
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
 
             with open(model_path, 'rb') as pkl:
                 model = pickle.load(pkl)
 
-            predicted = model.predict(np.array(dataframe_for_model_predict[self.features_columns]))
+            predicted = model.predict(scaler.transform(np.array(dataframe_for_model_predict[self.features_columns])))
             submission_site[column_name] = predicted
 
         return submission_site

@@ -89,11 +89,11 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 |                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
 |:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
-|                  MAE metric                  |       **264.20**        | 268.54                  | 272.09                   |
-|                 MAPE metric                  |        **41.48**        | 42.01                   | 42.10                    |
-|            Symmetric MAPE metric             |        **36.89**        | 37.36                   | 37.76                    |
-|             Quantile loss metric             |       **180.52**        | 182.50                  | 184.11                   |
-| Quantile loss metric (only for 0.5 quantile) |       **264.20**        | 268.54                  | 272.09                   |
+|                  MAE metric                  |         289.88          |         286.48          |        **286.45**        |
+|                 MAPE metric                  |          43.60          |          43.72          |        **43.56**         |
+|            Symmetric MAPE metric             |          38.61          |          38.77          |        **38.75**         |
+|             Quantile loss metric             |         195.34          |         194.55          |        **193.70**        |
+| Quantile loss metric (only for 0.5 quantile) |         289.88          |         286.48          |        **286.45**        |
 
 This approach uses flow values aggregated over a 
 specific period (for example 40, 80 or 120 days before the forecast issue date) 
@@ -103,14 +103,20 @@ to generate a forecast into the future.
 
 Figure 4. Representation of USGS streamflow data for `animas_r_at_durango` and actual values
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fanimas_r_at_durango_time_series_plot.png)
+![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fvirgin_r_at_virtin_time_series_plot.png)
 
-Figure 5. Forecasts for tests years for site `animas_r_at_durango` using USGS 
-streamflow based model (aggregation days: 40, kernel model - `QuantileRegressor`)
+Figure 5. Forecasts for tests years for site `virgin_r_at_virtin` using USGS 
+streamflow based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
 ### SNOTEL-based predictions
 
-**Public Averaged Mean Quantile Loss**: 186.9168
+|                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
+|:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
+|                  MAE metric                  |       **238.13**        |         315.47          |          303.89          |
+|                 MAPE metric                  |        **40.60**        |          51.64          |          49.86           |
+|            Symmetric MAPE metric             |        **33.19**        |          36.84          |          36.14           |
+|             Quantile loss metric             |       **151.71**        |         186.44          |          186.35          |
+| Quantile loss metric (only for 0.5 quantile) |       **238.13**        |         315.47          |          303.89          |
 
 Key features description: 
 
@@ -122,13 +128,28 @@ Key features description:
 
 ![spatial_extend_snotel_fontenelle_reservoir_inflow.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_fontenelle_reservoir_inflow.png)
 
-Figure. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
+Figure 6. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
+
+![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_snotel%2Fanimas_r_at_durango_time_series_plot.png)
+
+Figure 7. Forecasts for tests years for site `animas_r_at_durango` using SNOTEL stations
+based model (aggregation days: 40, kernel model - `QuantileRegressor`)
 
 ### Ensembling of previous predictions
 
-**Public Averaged Mean Quantile Loss**: 150.2518
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
-![fontenelle_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_first_ensemble%2Ffontenelle_reservoir_inflow_time_series_plot.png)
+- **MAE metric**: 243.06
+- **MAPE metric**: 39.85
+- **Symmetric MAPE metric**: 33.93
+- **Quantile loss metric**: 167.40
+- **Quantile loss metric (only for 0.5 quantile)**: 243.06
+
+Combination of USGS streamflow -based model prediction and SNOTEL -based prediction
+
+![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
+
+Figure 8. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble
 
 ### Ensembling of previous predictions (with smoothing)
 
