@@ -168,7 +168,7 @@ class CommonRegression(TrainModel):
                 reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, verbose=-1)
             elif self.method == 'linear':
                 if alpha == 0.5:
-                    reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.17)
+                    reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.12)
                 else:
                     reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.08)
             elif self.method == 'forest':

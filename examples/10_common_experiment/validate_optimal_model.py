@@ -34,22 +34,22 @@ FEATURES = ['day_of_year', 'max_Mean_PDSI', 'max_PREC_DAILY_x', 'max_PREC_DAILY_
 PARAMETERS_BY_SITE = {
   "hungry_horse_reservoir_inflow": {
     "SNOTEL short days": 34,
-    "SNOTEL long days": 80,
-    "PDSI days": 100
+    "SNOTEL long days": 84,
+    "PDSI days": 104
   },
   "snake_r_nr_heise": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 100,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
     "PDSI days": 80
   },
   "pueblo_reservoir_inflow": {
-    "SNOTEL short days": 22,
+    "SNOTEL short days": 34,
     "SNOTEL long days": 80,
-    "PDSI days": 148
+    "PDSI days": 128
   },
   "sweetwater_r_nr_alcova": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 132,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
     "PDSI days": 80
   },
   "missouri_r_at_toston": {
@@ -58,22 +58,22 @@ PARAMETERS_BY_SITE = {
     "PDSI days": 80
   },
   "animas_r_at_durango": {
-    "SNOTEL short days": 22,
-    "SNOTEL long days": 80,
-    "PDSI days": 80
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
+    "PDSI days": 92
   },
   "yampa_r_nr_maybell": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 128,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 124,
     "PDSI days": 80
   },
   "libby_reservoir_inflow": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 96,
-    "PDSI days": 152
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
+    "PDSI days": 100
   },
   "boise_r_nr_boise": {
-    "SNOTEL short days": 10,
+    "SNOTEL short days": 34,
     "SNOTEL long days": 84,
     "PDSI days": 80
   },
@@ -83,43 +83,43 @@ PARAMETERS_BY_SITE = {
     "PDSI days": 152
   },
   "taylor_park_reservoir_inflow": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 80,
-    "PDSI days": 84
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
+    "PDSI days": 92
   },
   "dillon_reservoir_inflow": {
-    "SNOTEL short days": 22,
-    "SNOTEL long days": 148,
-    "PDSI days": 88
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 124,
+    "PDSI days": 80
   },
   "ruedi_reservoir_inflow": {
-    "SNOTEL short days": 22,
-    "SNOTEL long days": 112,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 100,
     "PDSI days": 80
   },
   "fontenelle_reservoir_inflow": {
     "SNOTEL short days": 34,
-    "SNOTEL long days": 80,
+    "SNOTEL long days": 84,
     "PDSI days": 88
   },
   "weber_r_nr_oakley": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 124,
-    "PDSI days": 112
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
+    "PDSI days": 104
   },
   "san_joaquin_river_millerton_reservoir": {
-    "SNOTEL short days": 10,
+    "SNOTEL short days": 34,
     "SNOTEL long days": 80,
-    "PDSI days": 120
+    "PDSI days": 144
   },
   "merced_river_yosemite_at_pohono_bridge": {
-    "SNOTEL short days": 10,
+    "SNOTEL short days": 34,
     "SNOTEL long days": 80,
-    "PDSI days": 84
+    "PDSI days": 128
   },
   "american_river_folsom_lake": {
-    "SNOTEL short days": 22,
-    "SNOTEL long days": 92,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 84,
     "PDSI days": 120
   },
   "colville_r_at_kettle_falls": {
@@ -129,7 +129,7 @@ PARAMETERS_BY_SITE = {
   },
   "stehekin_r_at_stehekin": {
     "SNOTEL short days": 34,
-    "SNOTEL long days": 80,
+    "SNOTEL long days": 84,
     "PDSI days": 80
   },
   "detroit_lake_inflow": {
@@ -138,13 +138,13 @@ PARAMETERS_BY_SITE = {
     "PDSI days": 104
   },
   "virgin_r_at_virtin": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 100,
-    "PDSI days": 100
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 124,
+    "PDSI days": 80
   },
   "skagit_ross_reservoir": {
-    "SNOTEL short days": 10,
-    "SNOTEL long days": 80,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 124,
     "PDSI days": 80
   },
   "boysen_reservoir_inflow": {
@@ -158,8 +158,8 @@ PARAMETERS_BY_SITE = {
     "PDSI days": 80
   },
   "owyhee_r_bl_owyhee_dam": {
-    "SNOTEL short days": 22,
-    "SNOTEL long days": 116,
+    "SNOTEL short days": 34,
+    "SNOTEL long days": 100,
     "PDSI days": 152
   }
 }

@@ -130,9 +130,9 @@ Key features description:
 
 Figure 6. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_snotel%2Fanimas_r_at_durango_time_series_plot.png)
+![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_snotel%2Fvirgin_r_at_virtin_time_series_plot.png)
 
-Figure 7. Forecasts for tests years for site `animas_r_at_durango` using SNOTEL stations
+Figure 7. Forecasts for tests years for site `virgin_r_at_virtin` using SNOTEL stations
 based model (aggregation days: 40, kernel model - `QuantileRegressor`)
 
 ### Ensembling of previous predictions
@@ -181,8 +181,8 @@ Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`
 
 Common model. Final model metrics. 
 
-- **MAE metric**: 188.05
-- **MAPE metric**: 28.60
-- **Symmetric MAPE metric**: 27.04
-- **Quantile loss metric**: 123.75
-- **Quantile loss metric (only for 0.5 quantile)**: 188.05
+- **MAE metric**: 177.17
+- **MAPE metric**: 27.97
+- **Symmetric MAPE metric**: 26.30
+- **Quantile loss metric**: 120.78
+- **Quantile loss metric (only for 0.5 quantile)**: 177.17
