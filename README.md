@@ -126,7 +126,7 @@ Key features description:
 - `TMIN_DAILY` - min temperature
 - `WTEQ_DAILY` - snow water equivalent	
 
-![spatial_extend_snotel_fontenelle_reservoir_inflow.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_fontenelle_reservoir_inflow.png)
+![spatial_extend_snotel_animas_r_at_durango.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_animas_r_at_durango.png)
 
 Figure 6. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
@@ -153,9 +153,7 @@ Figure 8. Forecasts for tests years for site `hungry_horse_reservoir_inflow` usi
 
 ### Ensembling of previous predictions (with smoothing)
 
-**Public Averaged Mean Quantile Loss**: 149.5267
-
-![fontenelle_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_first_ensemble_with_smoothing%2Ffontenelle_reservoir_inflow_time_series_plot.png)
+In progress
 
 ### SNODAS 
 
@@ -178,3 +176,13 @@ Data preprocessing for SNODAS is divided into two steps:
 ![snow_accumulation.gif](docs%2Fimages%2Fsnow_accumulation.gif)
 
 Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`. Units: `Kilograms per square meter / 10`
+
+### Final model
+
+Common model. Final model metrics. 
+
+- **MAE metric**: 188.05
+- **MAPE metric**: 28.60
+- **Symmetric MAPE metric**: 27.04
+- **Quantile loss metric**: 123.75
+- **Quantile loss metric (only for 0.5 quantile)**: 188.05
