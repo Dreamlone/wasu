@@ -15,7 +15,8 @@ It is recommended to start exploration with [examples](./examples) folder:
 - [4_snotel](./examples/4_snotel) - use of aggregated statistics from snowpack SNOTEL data 
 - [5_simple_ensemble](./examples/5_simple_ensemble) - ensemble of previous forecasts from data sources
 - [6_simple_ensemble_with_smoothing](./examples/6_simple_ensemble_with_smoothing) - ensembling with smoothing
-
+- [7_snodas](./examples/7_snodas) - use aggregated statistics of SNODAS (snow gridded) data
+- [8_teleconnections](./examples/8_teleconnections) - teleconnections with snotel data
 
 During code execution the `plots` folder is generated. 
 
@@ -23,57 +24,69 @@ For example, there you can find zones for which forecast models are initialized:
 
 ![spatial_extend.png](examples%2Fplots%2Fspatial%2Fspatial_extend.png)
 
+Figure 1. Spatial polygons for river basins
+
 ## Algorithms description 
 
 This section provides explanations that explain how the algorithms work 
 
 ### Simple repeating 
 
-**Public Averaged Mean Quantile Loss**: 330.1185
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
-The simplest possible algorithm. Test years on which the evaluation is performed:
+- **MAE metric**: 396.65
+- **MAPE metric**: 56.50
+- **Symmetric MAPE metric**: 61.37
+- **Quantile loss metric**: 367.66
+- **Quantile loss metric (only for 0.5 quantile)**: 396.65
 
-- 2005
-- 2007
-- 2009
-- 2011
-- 2013
-- 2015
-- 2017
-- 2019
-- 2021
-- 2023
-
-The algorithm takes the value from 2004 and assigns it to each subsequent year.
+The simplest possible algorithm.
+For provided above validation years the algorithm takes the value from 2015 and assigns it to each subsequent year.
 
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_repeating%2Fanimas_r_at_durango_time_series_plot.png)
 
-Figure. Forecasts for tests years for site `animas_r_at_durango` using simple repeating since 2004
+Figure 2. Forecasts for tests years for site `animas_r_at_durango` using simple 
+repeating since 2015
 
 ### Advanced repeating 
 
-**Public Averaged Mean Quantile Loss**: 283.6057
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
-Uses values from the previous year for this site to be used as a forecast. That is, for 2005 the year 2004 will be used, for 2007 the year 2006 will be used.
+- **MAE metric**: 386.02
+- **MAPE metric**: 59.98
+- **Symmetric MAPE metric**: 52.97
+- **Quantile loss metric**: 275.82
+- **Quantile loss metric (only for 0.5 quantile)**: 386.02
+
+Uses values from the previous year for this site to be used as a forecast. 
+That is, for 2005 the year 2004 will be used, for 2007 the year 2006 will be used, etc.
 
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_advanced_repeating%2Fanimas_r_at_durango_time_series_plot.png)
 
-Figure. Forecasts for tests years for site `animas_r_at_durango` using advanced repeating 
+Figure 3. Forecasts for tests years for site `animas_r_at_durango` using 
+advanced repeating 
 
 ### Streamflow-based predictions
 
-**Public Averaged Mean Quantile Loss**: 207.7306 
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
+
+|                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
+|:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
+|                  MAE metric                  |         264.20          | 268.54                  | 272.09                   |
+|                 MAPE metric                  |          41.48          | 42.01                   | 42.10                    |
+|            Symmetric MAPE metric             |          36.89          | 37.36                   | 37.76                    |
+|             Quantile loss metric             |         180.52          | 182.50                  | 184.11                   |
+| Quantile loss metric (only for 0.5 quantile) |         264.20          | 268.54                  | 272.09                   |
 
 This approach uses flow values aggregated over a 
-specific period (typically 180 days before the forecast issue date) 
+specific period (for example 40, 80 or 120 days before the forecast issue date) 
 to generate a forecast into the future. 
 
-![2005-01-22 00:00:00_site_hungry_horse_reservoir_inflow.png](examples%2Fplots%2Fusgs_streamflow_3d%2F2005-01-22%2000%3A00%3A00_site_hungry_horse_reservoir_inflow.png)
-
-Figure. 3d plot features (`min_value` and `mean_value`), `predictions` (surface) and `actual` values (points) for training sample for
-desired issue date
-
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fanimas_r_at_durango_time_series_plot.png)
+
+Figure 4. Forecasts for tests years for site `animas_r_at_durango` using USGS streamflow based model
+
+![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fusgs_streamflow_plots%2Fanimas_r_at_durango_time_series_plot.png)
 
 ### SNOTEL-based predictions
 

@@ -12,11 +12,12 @@ warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_streamflow():
-    aggregation_days = 45
+    aggregation_days = 120
+    validation_year = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     # submission_format = pd.read_csv(Path('../../data/submission_format.csv'), parse_dates=['issue_date'])
     validator = ModelValidation(folder_for_plots='simple_repeating',
-                                years_to_validate=[2019, 2020, 2021, 2022, 2023])
+                                years_to_validate=validation_year)
     submission_format = validator.generate_submission_format()
 
     # Load dataframe with metadata
@@ -30,7 +31,7 @@ def generate_forecast_based_on_streamflow():
     model.save_predictions_as_submit(predicted, path=f'./results/usgs_streamflow_{aggregation_days}.csv')
     validator.compare_dataframes(predicted, train_df,
                                  save_predicted_vs_actual_into_file=f'./validation/usgs_streamflow_{aggregation_days}.csv')
-    TimeSeriesPlot().predicted_time_series(predicted, plots_folder_name='predictions_usgs_streamflow')
+    TimeSeriesPlot(validation_year).predicted_time_series(predicted, plots_folder_name='predictions_usgs_streamflow')
 
 
 if __name__ == '__main__':

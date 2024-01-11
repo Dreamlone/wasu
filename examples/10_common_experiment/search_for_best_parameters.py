@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 
 from wasu.development.paths import get_models_path
 from wasu.development.validation import smape
+from wasu.metrics import compute_quantile_loss
 
 warnings.filterwarnings('ignore')
 
@@ -30,14 +31,6 @@ SITES = ['hungry_horse_reservoir_inflow',
          'stehekin_r_at_stehekin', 'detroit_lake_inflow', 'virgin_r_at_virtin',
          'skagit_ross_reservoir', 'boysen_reservoir_inflow', 'pecos_r_nr_pecos',
          'owyhee_r_bl_owyhee_dam']
-
-
-def compute_quantile_loss(y_true, y_pred, quantile):
-    """
-    URL: https://ethen8181.github.io/machine-learning/ab_tests/quantile_regression/quantile_regression.html
-    """
-    residual = y_true - y_pred
-    return np.mean(np.maximum(quantile * residual, (quantile - 1) * residual))
 
 
 def create_optimal_surfaces_plots(report_with_metrics: pd.DataFrame, best_solutions: pd.DataFrame, metric_name: str):

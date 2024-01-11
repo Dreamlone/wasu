@@ -13,7 +13,7 @@ from wasu.development.paths import path_to_data_folder, path_to_plots_folder
 class TimeSeriesPlot:
     """ Create plots with predicted and actual values per each site """
 
-    def __init__(self):
+    def __init__(self, test_years=None):
         self.metadata = pd.read_csv(Path(path_to_data_folder(), 'metadata_TdPVeJC.csv'))
         self.train = pd.read_csv(Path(path_to_data_folder(), 'train.csv'), parse_dates=['year'])
         self.train = self.train.dropna()
@@ -31,8 +31,8 @@ class TimeSeriesPlot:
                                              parse_dates=['issue_date'])
 
         # Get missing years (in test years)
-        all_years = list(range(2000, 2024))
-        test_years = [2020, 2021, 2022]
+        if test_years is None:
+            test_years = [2020, 2021, 2022]
         self.test_years = pd.DataFrame({'year': list(test_years)})
         self.test_years['volume'] = 0
         self.test_years['year'] = pd.to_datetime(self.test_years['year'], format='%Y')

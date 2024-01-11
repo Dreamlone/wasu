@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_pinball_loss
 
 from wasu.development.paths import path_to_examples_folder
+from wasu.metrics import compute_quantile_loss
 
 
 def smape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -40,7 +41,6 @@ class ModelValidation:
 
         self.years_to_validate = years_to_validate
         if self.years_to_validate is None:
-            # self.years_to_validate = [2010, 2012, 2014, 2016, 2018, 2020]
             self.years_to_validate = [2020, 2021, 2022]
 
         self.sites_to_validate = sites_to_validate
@@ -128,11 +128,17 @@ class ModelValidation:
         smape_metric = smape(y_true=np.array(df_for_comparison['actual'], dtype=float),
                              y_pred=np.array(df_for_comparison['volume_50'], dtype=float))
 
-        mpl = mean_pinball_loss(y_true=np.array(df_for_comparison['actual'], dtype=float),
-                                y_pred=np.array(df_for_comparison['volume_50'], dtype=float))
-
         logger.info(f'Symmetric MAPE metric: {smape_metric:.2f}')
-        logger.info(f'Mean pinball loss metric: {mpl:.2f}')
+
+        metric_low = compute_quantile_loss(y_true=np.array(df_for_comparison['actual']),
+                                           y_pred=np.array(df_for_comparison['volume_10']), quantile=0.1)
+        metric_mean = compute_quantile_loss(y_true=np.array(df_for_comparison['actual']),
+                                            y_pred=np.array(df_for_comparison['volume_50']), quantile=0.5)
+        metric_high = compute_quantile_loss(y_true=np.array(df_for_comparison['actual']),
+                                            y_pred=np.array(df_for_comparison['volume_90']), quantile=0.9)
+        quantile_loss = (metric_low + metric_mean + metric_high) / 3
+
+        logger.info(f'Quantile loss metric: {quantile_loss:.2f}. 0.5 loss: {metric_mean:.2f}')
         logger.warning('--------------------------------------------')
 
     def _make_plots(self, df_for_comparison: pd.DataFrame, site_to_validate: str):

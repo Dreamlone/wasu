@@ -34,7 +34,7 @@ def _aggregate_features(agg_streamflow: pd.DataFrame):
 class StreamFlowRegression(TrainModel):
     """ Create forecasts based on streamflow USGS data """
 
-    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 180):
+    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 180, train_test_split_year: int = 2015):
         super().__init__(train_df)
         self.backup_model = AdvancedRepeatingTrainModel(train_df)
 
@@ -52,6 +52,7 @@ class StreamFlowRegression(TrainModel):
 
         self.train_df = self.train_df.dropna()
         self.train_df['year_as_int'] = self.train_df['year'].dt.year
+        self.train_test_split_year = train_test_split_year
 
     def load_data_from_kwargs(self, kwargs):
         metadata: pd.DataFrame = kwargs['metadata']
@@ -97,6 +98,9 @@ class StreamFlowRegression(TrainModel):
     def fit_main_model(self, site: str, streamflow_df: pd.DataFrame, site_df: pd.DataFrame):
         """ Fit main model and save it """
         dataframe_for_model_fit = self._collect_data_for_model_fit(streamflow_df, site_df)
+
+        # Split data for train and test
+        dataframe_for_model_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year <= self.train_test_split_year]
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:

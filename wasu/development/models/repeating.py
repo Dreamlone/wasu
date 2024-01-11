@@ -7,10 +7,10 @@ from wasu.development.models.train_model import TrainModel
 class SimpleRepeatingTrainModel(TrainModel):
     """ Repeat last known values in 2004 year """
 
-    def __init__(self, train_df: pd.DataFrame):
+    def __init__(self, train_df: pd.DataFrame, last_year: int = 2004):
         super().__init__(train_df)
 
-        self.last_year = 2004
+        self.last_year = last_year
         self.lower_ratio = 0.1
         self.above_ratio = 0.1
 
