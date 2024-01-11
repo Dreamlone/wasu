@@ -590,7 +590,11 @@ def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe,
         raise ValueError(f'Not supported label {label}')
 
     dataset['issue_date'] = issue_date
-    dataset['day_of_year'] = day_of_year
+    # To avoid linear extrapolation
+    if day_of_year <= 211:
+        dataset['day_of_year'] = day_of_year
+    else:
+        dataset['day_of_year'] = 211
     return dataset
 
 
