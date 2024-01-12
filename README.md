@@ -1,4 +1,4 @@
-# wasu
+![wasu_logo.png](docs%2Fwasu_logo.png)
 
 Water Supply Forecast competition model
 
