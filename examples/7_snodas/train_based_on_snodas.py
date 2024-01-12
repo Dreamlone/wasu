@@ -18,8 +18,8 @@ def train_snodas_model():
     metadata = pd.read_csv(Path('../../data/metadata_TdPVeJC.csv'))
     path_to_snodas = Path('../../data/snodas_csv').resolve()
 
-    model = SnodasRegression(train_df=train_df, aggregation_days=180)
-    model.fit(submission_format, metadata=metadata, path_to_snodas=path_to_snodas, vis=True)
+    model = SnodasRegression(train_df=train_df, aggregation_days=120, train_test_split_year=2015)
+    model.fit(submission_format, metadata=metadata, path_to_snodas=path_to_snodas, vis=False)
 
 
 if __name__ == '__main__':

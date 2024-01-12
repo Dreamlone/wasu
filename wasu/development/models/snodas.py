@@ -12,6 +12,7 @@ from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import QuantileRegressor
 from sklearn.metrics import mean_absolute_error
+from sklearn.preprocessing import StandardScaler
 
 from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.models.create import ModelsCreator
@@ -42,7 +43,7 @@ def _aggregate_features(features_columns: List, agg_snodas: pd.DataFrame):
 class SnodasRegression(TrainModel):
     """ Create forecasts based on SNODAS data """
 
-    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90):
+    def __init__(self, train_df: pd.DataFrame, aggregation_days: int = 90, train_test_split_year: int = 2015):
         super().__init__(train_df)
         self.backup_model = SnotelFlowRegression(train_df, aggregation_days=180)
 
@@ -68,6 +69,7 @@ class SnodasRegression(TrainModel):
         self.name = f'snodas_{aggregation_days}'
         self.aggregation_days = aggregation_days
         self.model_folder = ModelsCreator(self.name).model_folder()
+        self.train_test_split_year = train_test_split_year
 
     def load_data_from_kwargs(self, kwargs):
         metadata: pd.DataFrame = kwargs['metadata']
@@ -84,23 +86,22 @@ class SnodasRegression(TrainModel):
 
         # Fit model
         for alpha in [0.1, 0.5, 0.9]:
-            reg = LGBMRegressor(objective='quantile', random_state=2023, alpha=alpha, verbose=-1)
-            # reg = QuantileRegressor(quantile=alpha, solver='highs-ds')
-            df = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year < 2020]
+            reg = QuantileRegressor(quantile=alpha, solver='highs-ds', alpha=0.08)
+
+            df = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year <= self.train_test_split_year]
+
             if alpha == 0.9:
                 target = np.array(df['target']) * 1.05
             elif alpha == 0.5:
                 target = np.array(df['target'])
             else:
                 target = np.array(df['target']) * 0.95
-            #
-            # reg = RandomForestRegressor(max_depth=3)
-            reg.fit(np.array(df[self.all_features]), target)
 
-            train_predicted = reg.predict(np.array(dataframe_for_model_fit[self.all_features]))
-            mae_metric = mean_absolute_error(y_pred=train_predicted,
-                                             y_true=np.array(dataframe_for_model_fit['target'], dtype=float))
-            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}. MAE: {mae_metric}')
+            scaler = StandardScaler()
+            scaled_train = scaler.fit_transform(np.array(df[self.all_features]))
+            reg.fit(scaled_train, target)
+
+            logger.debug(f'Train model for alpha {alpha}. Length: {len(dataframe_for_model_fit)}')
 
             if self.vis is True:
                 created_spatial_plot(dataframe_for_model_fit, reg, self.all_features,
@@ -111,26 +112,32 @@ class SnodasRegression(TrainModel):
             with open(model_path, 'wb') as pkl:
                 pickle.dump(reg, pkl)
 
-        # Make plots
-        for col in self.all_features:
-            plt.scatter(dataframe_for_model_fit['issue_date'], dataframe_for_model_fit['target'], c='blue',
-                        label='Target')
-            plt.scatter(dataframe_for_model_fit['issue_date'], dataframe_for_model_fit[col], c='orange')
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+            with open(scaler_path, 'wb') as pkl:
+                pickle.dump(scaler, pkl)
 
-            for alpha in [0.1, 0.5, 0.9]:
-                # Load model
-                file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
-                with open(Path(self.model_folder, file_name), 'rb') as pkl:
-                    model = pickle.load(pkl)
+        # Make plots with features (if required)
+        if self.vis is True:
+            for col in self.all_features:
+                plt.scatter(dataframe_for_model_fit['issue_date'], dataframe_for_model_fit['target'], c='blue',
+                            label='Target')
+                plt.scatter(dataframe_for_model_fit['issue_date'], dataframe_for_model_fit[col], c='orange')
 
-                train_predicted = model.predict(np.array(dataframe_for_model_fit[self.all_features]))
-                if alpha == 0.5:
-                    plt.scatter(dataframe_for_model_fit['issue_date'], train_predicted, c='green', label='Predict')
-                else:
-                    plt.plot(dataframe_for_model_fit['issue_date'], train_predicted, c='green', alpha=0.5)
-            plt.title(col)
-            plt.legend()
-            plt.show()
+                for alpha in [0.1, 0.5, 0.9]:
+                    # Load model
+                    file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
+                    with open(Path(self.model_folder, file_name), 'rb') as pkl:
+                        model = pickle.load(pkl)
+
+                    train_predicted = model.predict(np.array(dataframe_for_model_fit[self.all_features]))
+                    if alpha == 0.5:
+                        plt.scatter(dataframe_for_model_fit['issue_date'], train_predicted, c='green', label='Predict')
+                    else:
+                        plt.plot(dataframe_for_model_fit['issue_date'], train_predicted, c='green', alpha=0.5)
+                plt.title(col)
+                plt.legend()
+                plt.show()
 
     def fit(self, submission_format: pd.DataFrame, **kwargs) -> Union[str, Path]:
         """ Fit new model based on snotel """
@@ -227,13 +234,19 @@ class SnodasRegression(TrainModel):
         dataframe_for_model_predict = self._collect_data_for_model_predict(snodas_df, submission_site)
 
         for alpha, column_name in zip([0.1, 0.5, 0.9], ['volume_10', 'volume_50', 'volume_90']):
+            scaler_name = f'scaler_{site}_{str(alpha).replace(".", "_")}.pkl'
+            scaler_path = Path(self.model_folder, scaler_name)
+
+            with open(scaler_path, 'rb') as pkl:
+                scaler = pickle.load(pkl)
+
             file_name = f'model_{site}_{str(alpha).replace(".", "_")}.pkl'
             model_path = Path(self.model_folder, file_name)
 
             with open(model_path, 'rb') as pkl:
                 model = pickle.load(pkl)
 
-            predicted = model.predict(np.array(dataframe_for_model_predict[self.all_features]))
+            predicted = model.predict(scaler.transform(np.array(dataframe_for_model_predict[self.all_features])))
             submission_site[column_name] = predicted
 
         return submission_site

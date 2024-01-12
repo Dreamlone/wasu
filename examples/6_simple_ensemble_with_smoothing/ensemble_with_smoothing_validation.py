@@ -37,9 +37,10 @@ def smoothing(dataframe_with_predictions: pd.DataFrame) -> pd.DataFrame:
 
 
 def ensemble_from_files():
-    files_to_ensemble = ['../7_snodas/validation/snodas_100.csv',
-                         '../7_snodas/validation/snodas_200.csv']
-    validator = ModelValidation(folder_for_plots='ensemble')
+    files_to_ensemble = ['../3_streamflow/validation/usgs_streamflow_120.csv',
+                         '../4_snotel/validation/snotel_40.csv']
+    validation_year = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
+    validator = ModelValidation(folder_for_plots='ensemble', years_to_validate=validation_year)
 
     dataframes = []
     for file in files_to_ensemble:
@@ -77,6 +78,8 @@ def ensemble_from_files():
 
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     validator.compare_dataframes(corrected_response, train_df)
+    TimeSeriesPlot(validation_year).predicted_time_series(corrected_response,
+                                                          plots_folder_name='predictions_simple_ensemble_smoothing')
 
 
 if __name__ == '__main__':

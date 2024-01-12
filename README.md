@@ -4,6 +4,9 @@ Water Supply Forecast competition model
 
 Competition URL: [Water Supply Forecast Rodeo](https://www.drivendata.org/competitions/group/reclamation-water-supply-forecast/)
 
+This repository contains all the necessary materials to reproduce the results of the competition. 
+This module can also be seen as a sandbox for experimentation
+
 ## How to use this repository
 
 This repository contains code both for preparing visualisations 
@@ -34,6 +37,10 @@ It is recommended to start exploration with [examples](./examples) folder:
 - [6_simple_ensemble_with_smoothing](./examples/6_simple_ensemble_with_smoothing) - ensembling with smoothing
 - [7_snodas](./examples/7_snodas) - use aggregated statistics of SNODAS (snow gridded) data
 - [8_teleconnections](./examples/8_teleconnections) - teleconnections with snotel data
+- [9_common](./examples/9_common) - complex model which use SNOTEL and PDSI data to generate predictions
+- [10_common_experiment](./examples/10_common_experiment) - set of functions to provide hyperparameters search space exploration for common model 
+
+In the folders with submit prefix placed the code for execution stage (including serialized models).
 
 During code execution the `plots` folder is generated. 
 
@@ -153,9 +160,28 @@ Figure 8. Forecasts for tests years for site `hungry_horse_reservoir_inflow` usi
 
 ### Ensembling of previous predictions (with smoothing)
 
-In progress
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
-### SNODAS 
+- **MAE metric**: 240.41
+- **MAPE metric**: 39.60
+- **Symmetric MAPE metric**: 33.63
+- **Quantile loss metric**: 165.20
+- **Quantile loss metric (only for 0.5 quantile)**: 240.41
+
+![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble_smoothing%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
+
+Figure 9. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble with smoothing
+
+### SNODAS
+
+|                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
+|:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
+|                  MAE metric                  |         220.73          |         216.84          |        **215.10**        |
+|                 MAPE metric                  |          36.13          |          32.95          |        **32.26**         |
+|            Symmetric MAPE metric             |          31.36          |          29.99          |        **30.22**         |
+|             Quantile loss metric             |         146.95          |         140.51          |        **137.92**        |
+| Quantile loss metric (only for 0.5 quantile) |         220.73          |         216.84          |        **215.10**        |
+
 
 Modeled snow layer thickness, total of snow layers
 
@@ -176,6 +202,11 @@ Data preprocessing for SNODAS is divided into two steps:
 ![snow_accumulation.gif](docs%2Fimages%2Fsnow_accumulation.gif)
 
 Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`. Units: `Kilograms per square meter / 10`
+
+![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_snodas%2Fanimas_r_at_durango_time_series_plot.png)
+
+Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
+
 
 ### Final model
 
