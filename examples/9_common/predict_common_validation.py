@@ -6,16 +6,18 @@ import pandas as pd
 
 from wasu.development.models.common import CommonRegression
 from wasu.development.validation import ModelValidation
+from wasu.development.vis.visualization import TimeSeriesPlot
 
 warnings.filterwarnings('ignore')
 
 
 def generate_forecast_based_on_snotel():
     method = 'linear'
-    aggregation_days_snodas = 21
-    aggregation_days_snotel = 120
-    aggregation_days_pdsi = 124
-    validator = ModelValidation(folder_for_plots='common')
+    aggregation_days_snotel_short = 40
+    aggregation_days_snotel_long = 120
+    aggregation_days_pdsi = 120
+    validation_year = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
+    validator = ModelValidation(folder_for_plots='common', years_to_validate=validation_year)
 
     train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
     submission_format = validator.generate_submission_format()
@@ -27,17 +29,16 @@ def generate_forecast_based_on_snotel():
     path_to_pdsi = Path('../../data/pdsi_csv').resolve()
 
     model = CommonRegression(train_df=train_df, method=method,
-                             aggregation_days_snodas=aggregation_days_snodas,
-                             aggregation_days_snotel=aggregation_days_snotel,
+                             aggregation_days_snotel_short=aggregation_days_snotel_short,
+                             aggregation_days_snotel_long=aggregation_days_snotel_long,
                              aggregation_days_pdsi=aggregation_days_pdsi)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
                               path_to_snodas=path_to_snodas,
                               path_to_pdsi=path_to_pdsi)
 
-    validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted,
-                                     path=f'./validation/{method}_{aggregation_days_snodas}_{aggregation_days_snotel}_{aggregation_days_pdsi}.csv',
-                                     submission_format=submission_format)
+    file = f'./validation/{method}_{aggregation_days_snotel_short}_{aggregation_days_snotel_long}_{aggregation_days_pdsi}.csv'
+    validator.compare_dataframes(predicted, train_df, save_predicted_vs_actual_into_file=file)
+    TimeSeriesPlot(validation_year).predicted_time_series(predicted, plots_folder_name='predictions_snotel')
 
 
 if __name__ == '__main__':

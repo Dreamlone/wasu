@@ -35,8 +35,8 @@ def train_common_models_with_different_hyperparameters():
 
                 try:
                     model = CommonRegression(train_df=train_df, method='linear',
-                                             aggregation_days_snodas=aggregation_days_snodas,
-                                             aggregation_days_snotel=aggregation_days_snotel,
+                                             aggregation_days_snotel_short=aggregation_days_snodas,
+                                             aggregation_days_snotel_long=aggregation_days_snotel,
                                              aggregation_days_pdsi=aggregation_days_pdsi)
 
                     model.fit(submission_format, metadata=metadata,

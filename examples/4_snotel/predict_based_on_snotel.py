@@ -27,10 +27,6 @@ def generate_forecast_based_on_snotel():
                                  enable_spatial_aggregation=True, collect_only_in_basin=False)
     predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel)
 
-    validator.compare_dataframes(predicted, train_df)
-    model.save_predictions_as_submit(predicted, path=f'./results/snotel_{aggregation_days}.csv',
-                                     submission_format=submission_format)
-
     validator.compare_dataframes(predicted, train_df,
                                  save_predicted_vs_actual_into_file=f'./validation/snotel_{aggregation_days}.csv')
     TimeSeriesPlot(validation_year).predicted_time_series(predicted, plots_folder_name='predictions_snotel')

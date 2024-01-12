@@ -59,4 +59,4 @@ def show_time_series(site_id: str):
 
 
 if __name__ == '__main__':
-    show_time_series(site_id='animas_r_at_durango')
+    show_time_series(site_id='pueblo_reservoir_inflow')

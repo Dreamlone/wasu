@@ -121,9 +121,9 @@ class CommonRegression(TrainModel):
 
     def __init__(self, train_df: pd.DataFrame,
                  method: str = 'lg',
-                 aggregation_days_snodas: int = 90,
-                 aggregation_days_snotel: int = 90,
-                 aggregation_days_pdsi: int = 90):
+                 aggregation_days_snotel_short: int = 90,
+                 aggregation_days_snotel_long: int = 90,
+                 aggregation_days_pdsi: int = 90, train_test_split_year: int = 2015):
         super().__init__(train_df)
 
         # Use only available data
@@ -134,12 +134,13 @@ class CommonRegression(TrainModel):
         self.train_df = self.train_df.dropna()
         self.train_df['year_as_int'] = self.train_df['year'].dt.year
 
-        self.name = f'common_{method}_{aggregation_days_snodas}_{aggregation_days_snotel}_{aggregation_days_pdsi}'
-        self.aggregation_days_snodas = aggregation_days_snodas
-        self.aggregation_days_snotel = aggregation_days_snotel
+        self.name = f'common_{method}_{aggregation_days_snotel_short}_{aggregation_days_snotel_long}_{aggregation_days_pdsi}'
+        self.aggregation_days_snotel_short = aggregation_days_snotel_short
+        self.aggregation_days_snotel_long = aggregation_days_snotel_long
         self.aggregation_days_pdsi = aggregation_days_pdsi
         self.model_folder = ModelsCreator(self.name).model_folder()
         self.method = method
+        self.train_test_split_year = train_test_split_year
 
     def load_data_from_kwargs(self, kwargs):
         metadata: pd.DataFrame = kwargs['metadata']
@@ -178,8 +179,8 @@ class CommonRegression(TrainModel):
             else:
                 raise NotImplementedError()
 
-            df_fit = dataframe_for_model_fit.copy()
-            df_test = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year >= 2020]
+            df_fit = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year <= self.train_test_split_year]
+            df_test = dataframe_for_model_fit[dataframe_for_model_fit['issue_date'].dt.year > self.train_test_split_year]
             if self.method != 'linear':
                 if alpha == 0.9:
                     target = np.array(df_fit['target']) * 1.3
@@ -284,8 +285,8 @@ class CommonRegression(TrainModel):
 
                 current_dataset = None
                 for df, aggregation_days, label in zip([snotel_df, snotel_df, pdsi_df],
-                                                       [self.aggregation_days_snodas,
-                                                        self.aggregation_days_snotel,
+                                                       [self.aggregation_days_snotel_short,
+                                                        self.aggregation_days_snotel_long,
                                                         self.aggregation_days_pdsi],
                                                        ['snotel', 'snotel', 'pdsi']):
                     dataset = aggregate_data_for_issue_date(issue_date, day_of_year, df, aggregation_days,
@@ -338,8 +339,8 @@ class CommonRegression(TrainModel):
 
             current_dataset = None
             for df, aggregation_days, label in zip([snotel_df, snotel_df, pdsi_df],
-                                                   [self.aggregation_days_snodas,
-                                                    self.aggregation_days_snotel,
+                                                   [self.aggregation_days_snotel_short,
+                                                    self.aggregation_days_snotel_long,
                                                     self.aggregation_days_pdsi],
                                                    ['snotel', 'snotel', 'pdsi']):
                 dataset = aggregate_data_for_issue_date(issue_date, issue_date.dayofyear, df, aggregation_days,

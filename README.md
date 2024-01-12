@@ -207,8 +207,30 @@ Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`
 
 Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
+### Common model
 
-### Final model
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
+
+Since SNODAS and SNOTEL data are compatible in the terms of feature engineering is was decided to use only SNOTEL 
+data because it is much easier to process (Figure 11)
+
+![pueblo_reservoir_inflow_ts_mean_Modeled snow water equivalent, total of snow layers.png](examples%2Fplots%2Fsnodas_investigation%2Fpueblo_reservoir_inflow_ts_mean_Modeled%20snow%20water%20equivalent%2C%20total%20of%20snow%20layers.png)
+
+Figure 11. SNODAS and SNOTEL data comparison vs target for site `pueblo_reservoir_inflow`
+
+The graph shows that snowpack does not completely determine target. 
+Therefore, it was decided to include an additional parameter, PDSI, 
+in the model to account for soil characteristics. 
+
+TODO: add description why it was decided to add several aggregations per SNOTEL 
+
+- **MAE metric**: 197.09
+- **MAPE metric**: 30.71
+- **Symmetric MAPE metric**: 29.03
+- **Quantile loss metric**: 132.90
+- **Quantile loss metric (only for 0.5 quantile)**: 197.09
+
+### Final model 
 
 Common model. Final model metrics. 
 

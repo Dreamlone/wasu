@@ -43,8 +43,8 @@ def generate_forecast_based_on_snotel():
                     continue
 
                 model = CommonRegression(train_df=train_df, method=method,
-                                         aggregation_days_snodas=aggregation_days_snodas,
-                                         aggregation_days_snotel=aggregation_days_snotel,
+                                         aggregation_days_snotel_short=aggregation_days_snodas,
+                                         aggregation_days_snotel_long=aggregation_days_snotel,
                                          aggregation_days_pdsi=aggregation_days_pdsi)
                 predicted = model.predict(submission_format, metadata=metadata, path_to_snotel=path_to_snotel,
                                           path_to_snodas=path_to_snodas,
