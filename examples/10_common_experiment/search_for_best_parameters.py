@@ -3,6 +3,8 @@ import shutil
 from pathlib import Path
 
 import warnings
+from typing import Union
+
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -205,7 +207,7 @@ def compose_folder_with_models(best_solutions: pd.DataFrame):
         json.dump(aggregation_per_site, f)
 
 
-def search_for_optimum(metric_name: str = 'SMAPE'):
+def search_for_optimum(metric_name: str = 'SMAPE', search_within_snotel_short: Union[int, None] = None):
     path_to_results = Path('./validation').resolve()
     files = list(path_to_results.iterdir())
 
@@ -216,6 +218,11 @@ def search_for_optimum(metric_name: str = 'SMAPE'):
         name_split = name.split('_')
         method = name_split[0]
         snotel_short = int(name_split[1])
+        if search_within_snotel_short is not None:
+            # Search only within snotel short days
+            if snotel_short != search_within_snotel_short:
+                continue
+
         snotel_long = int(name_split[2])
         pdsi_days = int(name_split[3])
         results = [method, snotel_short, snotel_long, pdsi_days]
@@ -258,4 +265,4 @@ def search_for_optimum(metric_name: str = 'SMAPE'):
 
 
 if __name__ == '__main__':
-    search_for_optimum('Quantile loss')
+    search_for_optimum('Quantile loss', 22)

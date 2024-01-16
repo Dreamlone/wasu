@@ -222,7 +222,7 @@ The graph shows that snowpack does not completely determine target.
 Therefore, it was decided to include an additional parameter, PDSI, 
 in the model to account for soil characteristics. 
 
-TODO: add description why it was decided to add several aggregations per SNOTEL 
+**TODO**: add description why it was decided to add several aggregations per SNOTEL 
 
 - **MAE metric**: 197.09
 - **MAPE metric**: 30.71
@@ -239,3 +239,17 @@ Common model. Final model metrics.
 - **Symmetric MAPE metric**: 26.30
 - **Quantile loss metric**: 120.78
 - **Quantile loss metric (only for 0.5 quantile)**: 177.17
+
+To find the optimal configuration of hyperparameters (`days SNOTEL short`, `days SNOTEL long`, `days PDSI`), a brute force algorithm 
+was applied. The figures below show the results of 
+calculations for two loss functions: Quantile loss and MAE (Figure 12 and Figure 13)
+
+![22_mae_virgin_r_at_virtin.png](docs%2Fimages%2F22_mae_virgin_r_at_virtin.png)
+
+Figure 12. Exploration of MAE landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
+Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=148, `days PDSI`=124)
+
+![22_quantile_virgin_r_at_virtin.png](docs%2Fimages%2F22_quantile_virgin_r_at_virtin.png)
+
+Figure 13. Exploration of Quantile loss landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
+Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=108, `days PDSI`=92)
