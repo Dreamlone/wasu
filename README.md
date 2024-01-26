@@ -172,7 +172,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 Figure 9. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble with smoothing
 
-### SNODAS
+### SNODAS-based model
 
 |                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
 |:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
@@ -207,7 +207,7 @@ Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`
 
 Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
-### Common model
+### Complex model 
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -221,8 +221,6 @@ Figure 11. SNODAS and SNOTEL data comparison vs target for site `pueblo_reservoi
 The graph shows that snowpack does not completely determine target. 
 Therefore, it was decided to include an additional parameter, PDSI, 
 in the model to account for soil characteristics. 
-
-**TODO**: add description why it was decided to add several aggregations per SNOTEL 
 
 - **MAE metric**: 197.09
 - **MAPE metric**: 30.71
@@ -253,3 +251,7 @@ Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=
 
 Figure 13. Exploration of Quantile loss landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
 Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=108, `days PDSI`=92)
+
+## Metric on validation sample changes through model versions
+
+![compare_approaches.png](examples%2Fplots%2Fcompare_approaches.png)
