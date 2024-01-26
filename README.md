@@ -207,7 +207,9 @@ Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`
 
 Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
-### Complex model 
+### Complex model ver 1
+
+### Complex model ver 2
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -228,7 +230,7 @@ in the model to account for soil characteristics.
 - **Quantile loss metric**: 132.90
 - **Quantile loss metric (only for 0.5 quantile)**: 197.09
 
-### Final model 
+### Complex model (optimized)
 
 Common model. Final model metrics. 
 
