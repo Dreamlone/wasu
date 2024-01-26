@@ -5,6 +5,7 @@ import pickle
 import shutil
 from pathlib import Path
 from typing import Hashable, Any, Optional, Union
+from loguru import logger
 
 import geopandas
 import numpy as np
@@ -533,17 +534,18 @@ def predict(site_id: str, issue_date: str, assets: dict[Hashable, Any],
         The three values should be (0.10 quantile, 0.50 quantile, 0.90 quantile).
     """
     # Prepare features for predict (see)
-    # try:
-    features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
-    # except Exception as ex:
-    #     # Generate forecast like one year ago
-    #     try:
-    #         issue_date = datetime.datetime.strptime(issue_date, '%Y-%m-%d')
-    #         issue_date = issue_date - datetime.timedelta(days=365)
-    #         issue_date = issue_date.strftime('%Y-%m-%d')
-    #         features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
-    #     except Exception as ex:
-    #         return 200.0, 400.0, 600.0
+    try:
+        features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
+    except Exception as ex:
+        # Generate forecast like one year ago
+        try:
+            issue_date = datetime.datetime.strptime(issue_date, '%Y-%m-%d')
+            issue_date = issue_date - datetime.timedelta(days=365)
+            issue_date = issue_date.strftime('%Y-%m-%d')
+            features_for_predict = collect_features_for_prediction(site_id, data_dir, preprocessed_dir, issue_date)
+        except Exception as ex:
+            logger.info(f'Predictions was failed. Apply wrong approach')
+            return 200.0, 400.0, 600.0
 
     path_to_models = Path(src_dir, 'models').resolve()
 

@@ -17,10 +17,11 @@ def compare_approaches():
     plots_folder = path_to_plots_folder()
     plots_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.DataFrame({'Mean average quantile loss': [367.66, 275.82, 193.70, 151.71, 167.40, 165.20, 137.92, 132.90, 120.78],
+    df = pd.DataFrame({'Mean average quantile loss': [367.66, 275.82, 193.70, 151.71, 167.40, 165.20, 137.92, 137.65, 132.90, 120.78],
                        'Method': ['Simple repeating', 'Advanced repeating',
                                   'Streamflow-based', 'SNOTEL', 'Ensemble',
-                                  'Ensemble (smoothed)', 'SNODAS', 'Complex',
+                                  'Ensemble (smoothed)', 'SNODAS', 'Complex ver 1',
+                                  'Complex ver 2',
                                   'Complex (optimized)']})
 
     fig_size = (8.0, 3.0)
