@@ -272,3 +272,7 @@ Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=
 ## Metric on validation sample changes through model versions
 
 ![compare_approaches.png](examples%2Fplots%2Fcompare_approaches.png)
+
+## Report 
+
+[Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf](./report/Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf)
