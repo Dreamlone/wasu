@@ -209,10 +209,24 @@ Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS
 
 ### Complex model ver 1
 
+Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
+
+- **MAE metric**: 214.44
+- **MAPE metric**: 31.16
+- **Symmetric MAPE metric**: 30.54
+- **Quantile loss metric**: 137.65
+- **Quantile loss metric (only for 0.5 quantile)**: 214.44
+- 
 ### Complex model ver 2
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
+- **MAE metric**: 197.09
+- **MAPE metric**: 30.71
+- **Symmetric MAPE metric**: 29.03
+- **Quantile loss metric**: 132.90
+- **Quantile loss metric (only for 0.5 quantile)**: 197.09
+- 
 Since SNODAS and SNOTEL data are compatible in the terms of feature engineering is was decided to use only SNOTEL 
 data because it is much easier to process (Figure 11)
 
@@ -224,11 +238,6 @@ The graph shows that snowpack does not completely determine target.
 Therefore, it was decided to include an additional parameter, PDSI, 
 in the model to account for soil characteristics. 
 
-- **MAE metric**: 197.09
-- **MAPE metric**: 30.71
-- **Symmetric MAPE metric**: 29.03
-- **Quantile loss metric**: 132.90
-- **Quantile loss metric (only for 0.5 quantile)**: 197.09
 
 ### Complex model (optimized)
 
