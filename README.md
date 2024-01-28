@@ -1,4 +1,4 @@
-![wasu_logo.png](docs%2Fwasu_logo.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/docs/wasu_logo.png" width="600"/>
 
 Water Supply Forecast competition model
 
@@ -53,7 +53,7 @@ During code execution the `plots` folder is generated.
 
 For example, there you can find zones for which forecast models are initialized:
 
-![spatial_extend.png](examples%2Fplots%2Fspatial%2Fspatial_extend.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/spatial/spatial_extend.png" width="600"/>
 
 Figure 1. Spatial polygons for river basins
 
@@ -74,7 +74,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 The simplest possible algorithm.
 For provided above validation years the algorithm takes the value from 2015 and assigns it to each subsequent year.
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_repeating%2Fanimas_r_at_durango_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_simple_repeating/animas_r_at_durango_time_series_plot.png" width="600"/>
 
 Figure 2. Forecasts for tests years for site `animas_r_at_durango` using simple 
 repeating since 2015
