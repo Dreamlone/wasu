@@ -7,6 +7,12 @@ Competition URL: [Water Supply Forecast Rodeo](https://www.drivendata.org/compet
 This repository contains all the necessary materials to reproduce the results of the competition. 
 This module can also be seen as a sandbox for experimentation
 
+## Report 
+
+More or less complete description about how the algorithm works can be found in the PDF file:
+
+[Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf](./report/Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf)
+
 ## How to use this repository
 
 This repository contains code both for preparing visualisations 
@@ -29,16 +35,17 @@ Load the data and put it into data `folder`:
 After that repository is ready for experiments and data exploration
 It is recommended to start exploration with [examples](./examples) folder:
 
-- [1_basic](./examples/1_basic) - basic scripts that prepare exploratory data visualisations
-- [2_repeating](./examples/2_repeating) - repeating of last known values to generate forecasts (in two versions)
-- [3_streamflow](./examples/3_streamflow) - use of aggregated statistics from USGS streamflow data 
-- [4_snotel](./examples/4_snotel) - use of aggregated statistics from snowpack SNOTEL data 
-- [5_simple_ensemble](./examples/5_simple_ensemble) - ensemble of previous forecasts from data sources
-- [6_simple_ensemble_with_smoothing](./examples/6_simple_ensemble_with_smoothing) - ensembling with smoothing
-- [7_snodas](./examples/7_snodas) - use aggregated statistics of SNODAS (snow gridded) data
-- [8_teleconnections](./examples/8_teleconnections) - teleconnections with snotel data
-- [9_common](./examples/9_common) - complex model which use SNOTEL and PDSI data to generate predictions
-- [10_common_experiment](./examples/10_common_experiment) - set of functions to provide hyperparameters search space exploration for common model 
+- [1_basic](./examples/1_basic) - basic scripts that prepare exploratory data visualisations;
+- [2_repeating](./examples/2_repeating) - repeating of last known values to generate forecasts (in two versions);
+- [3_streamflow](./examples/3_streamflow) - use of aggregated statistics from USGS streamflow data;
+- [4_snotel](./examples/4_snotel) - use of aggregated statistics from snowpack SNOTEL data;
+- [5_simple_ensemble](./examples/5_simple_ensemble) - ensemble of previous forecasts from data sources;
+- [6_simple_ensemble_with_smoothing](./examples/6_simple_ensemble_with_smoothing) - ensembling with smoothing;
+- [7_snodas](./examples/7_snodas) - use aggregated statistics of SNODAS (snow gridded) data;
+- [8_teleconnections](./examples/8_teleconnections) - teleconnections with snotel data;
+- [9_common_ver_1](./examples/9_common_ver_1) - complex model which use SNOTEL, PDSI and Climate indices data to generate predictions - **Model on Hindcast Stage**;
+- [9_common_ver_2](./examples/9_common_ver_2) - complex model which use SNOTEL and PDSI data to generate predictions;
+- [10_common_experiment](./examples/10_common_experiment) - set of functions to provide hyperparameters search space exploration for common model - **Model on Forecast Stage**. 
 
 In the folders with submit prefix placed the code for execution stage (including serialized models).
 
@@ -90,7 +97,15 @@ That is, for 2005 the year 2004 will be used, for 2007 the year 2006 will be use
 Figure 3. Forecasts for tests years for site `animas_r_at_durango` using 
 advanced repeating 
 
-### Streamflow-based predictions
+### Aggregation-based algorithms
+
+All algorithms in the section below use the aggregation of historical data prior to the issue date as follows (Figure 4)
+
+![features.png](docs%2Fimages%2Ffeatures.png)
+
+Figure 4. Example of generating features for a model using aggregation with defined lag of 2 days
+
+#### Streamflow-based predictions
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -108,14 +123,14 @@ to generate a forecast into the future.
 
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fusgs_streamflow_plots%2Fanimas_r_at_durango_time_series_plot.png)
 
-Figure 4. Representation of USGS streamflow data for `animas_r_at_durango` and actual values
+Figure 5. Representation of USGS streamflow data for `animas_r_at_durango` and actual values
 
 ![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fvirgin_r_at_virtin_time_series_plot.png)
 
-Figure 5. Forecasts for tests years for site `virgin_r_at_virtin` using USGS 
+Figure 6. Forecasts for tests years for site `virgin_r_at_virtin` using USGS 
 streamflow based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
-### SNOTEL-based predictions
+#### SNOTEL-based predictions
 
 |                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
 |:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
@@ -135,14 +150,14 @@ Key features description:
 
 ![spatial_extend_snotel_animas_r_at_durango.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_animas_r_at_durango.png)
 
-Figure 6. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
+Figure 7. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
 ![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_snotel%2Fvirgin_r_at_virtin_time_series_plot.png)
 
-Figure 7. Forecasts for tests years for site `virgin_r_at_virtin` using SNOTEL stations
+Figure 8. Forecasts for tests years for site `virgin_r_at_virtin` using SNOTEL stations
 based model (aggregation days: 40, kernel model - `QuantileRegressor`)
 
-### Ensembling of previous predictions
+#### Ensembling of previous predictions
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -156,9 +171,9 @@ Combination of USGS streamflow -based model prediction and SNOTEL -based predict
 
 ![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
 
-Figure 8. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble
+Figure 9. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble
 
-### Ensembling of previous predictions (with smoothing)
+#### Ensembling of previous predictions (with smoothing)
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -170,9 +185,9 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 ![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble_smoothing%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
 
-Figure 9. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble with smoothing
+Figure 10. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble with smoothing
 
-### SNODAS-based model
+#### SNODAS-based model
 
 |                  **Metric**                  | **Aggregation days 40** | **Aggregation days 80** | **Aggregation days 120** |
 |:--------------------------------------------:|:-----------------------:|:-----------------------:|:------------------------:|
@@ -205,9 +220,9 @@ Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`
 
 ![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_snodas%2Fanimas_r_at_durango_time_series_plot.png)
 
-Figure 10. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
+Figure 11. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
-### Complex model ver 1
+#### Complex model ver 1
 
 Important! This model submitted to the Hindcast Stage
 
@@ -223,7 +238,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 Code for the model in the folder `9_common_ver_1`.
 
-### Complex model ver 2
+#### Complex model ver 2
 
 Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
@@ -234,18 +249,17 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 - **Quantile loss metric (only for 0.5 quantile)**: 197.09
 
 Since SNODAS and SNOTEL data are compatible in the terms of feature engineering is was decided to use only SNOTEL 
-data because it is much easier to process (Figure 11)
+data because it is much easier to process (Figure 12)
 
 ![pueblo_reservoir_inflow_ts_mean_Modeled snow water equivalent, total of snow layers.png](examples%2Fplots%2Fsnodas_investigation%2Fpueblo_reservoir_inflow_ts_mean_Modeled%20snow%20water%20equivalent%2C%20total%20of%20snow%20layers.png)
 
-Figure 11. SNODAS and SNOTEL data comparison vs target for site `pueblo_reservoir_inflow`
+Figure 12. SNODAS and SNOTEL data comparison vs target for site `pueblo_reservoir_inflow`
 
 The graph shows that snowpack does not completely determine target. 
 Therefore, it was decided to include an additional parameter, PDSI, 
 in the model to account for soil characteristics. 
 
-
-### Complex model (optimized)
+#### Complex model (optimized)
 
 Common model. Final model metrics. 
 
@@ -257,22 +271,22 @@ Common model. Final model metrics.
 
 To find the optimal configuration of hyperparameters (`days SNOTEL short`, `days SNOTEL long`, `days PDSI`), a brute force algorithm 
 was applied. The figures below show the results of 
-calculations for two loss functions: Quantile loss and MAE (Figure 12 and Figure 13)
+calculations for two loss functions: Quantile loss and MAE (Figure 13 and Figure 14)
 
 ![22_mae_virgin_r_at_virtin.png](docs%2Fimages%2F22_mae_virgin_r_at_virtin.png)
 
-Figure 12. Exploration of MAE landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
+Figure 13. Exploration of MAE landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
 Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=148, `days PDSI`=124)
 
 ![22_quantile_virgin_r_at_virtin.png](docs%2Fimages%2F22_quantile_virgin_r_at_virtin.png)
 
-Figure 13. Exploration of Quantile loss landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
+Figure 14. Exploration of Quantile loss landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
 Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=108, `days PDSI`=92)
 
-## Metric on validation sample changes through model versions
+### Metric on validation sample changes through model versions
+
+The results of applying all the approaches are shown below
 
 ![compare_approaches.png](examples%2Fplots%2Fcompare_approaches.png)
 
-## Report 
-
-[Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf](./report/Water_Supply_Forecast_Rodeo_Dreamlone_report.pdf)
+Figure 15. Average mean Quantile loss for implemented models on validation sample
