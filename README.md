@@ -74,7 +74,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 The simplest possible algorithm.
 For provided above validation years the algorithm takes the value from 2015 and assigns it to each subsequent year.
 
-<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_simple_repeating/animas_r_at_durango_time_series_plot.png" width="600"/>
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_simple_repeating/animas_r_at_durango_time_series_plot.png" width="700"/>
 
 Figure 2. Forecasts for tests years for site `animas_r_at_durango` using simple 
 repeating since 2015
@@ -92,7 +92,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 Uses values from the previous year for this site to be used as a forecast. 
 That is, for 2005 the year 2004 will be used, for 2007 the year 2006 will be used, etc.
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_advanced_repeating%2Fanimas_r_at_durango_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_advanced_repeating/animas_r_at_durango_time_series_plot.png" width="700"/>
 
 Figure 3. Forecasts for tests years for site `animas_r_at_durango` using 
 advanced repeating 
@@ -101,7 +101,7 @@ advanced repeating
 
 All algorithms in the section below use the aggregation of historical data prior to the issue date as follows (Figure 4)
 
-![features.png](docs%2Fimages%2Ffeatures.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/docs/images/features.png" width="600"/>
 
 Figure 4. Example of generating features for a model using aggregation with defined lag of 2 days
 
