@@ -121,11 +121,11 @@ This approach uses flow values aggregated over a
 specific period (for example 40, 80 or 120 days before the forecast issue date) 
 to generate a forecast into the future. 
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fusgs_streamflow_plots%2Fanimas_r_at_durango_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/usgs_streamflow_plots/animas_r_at_durango_time_series_plot.png" width="700"/>
 
 Figure 5. Representation of USGS streamflow data for `animas_r_at_durango` and actual values
 
-![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_usgs_streamflow%2Fvirgin_r_at_virtin_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_usgs_streamflow/virgin_r_at_virtin_time_series_plot.png" width="700"/>
 
 Figure 6. Forecasts for tests years for site `virgin_r_at_virtin` using USGS 
 streamflow based model (aggregation days: 120, kernel model - `QuantileRegressor`)
@@ -148,11 +148,11 @@ Key features description:
 - `TMIN_DAILY` - min temperature
 - `WTEQ_DAILY` - snow water equivalent	
 
-![spatial_extend_snotel_animas_r_at_durango.png](examples%2Fplots%2Fspatial_with_snotel_stations%2Fspatial_extend_snotel_animas_r_at_durango.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/spatial_with_snotel_stations/spatial_extend_snotel_animas_r_at_durango.png" width="700"/>
 
 Figure 7. SNOTEL stations and basin of `fontenelle_reservoir_inflow` site
 
-![virgin_r_at_virtin_time_series_plot.png](examples%2Fplots%2Fpredictions_snotel%2Fvirgin_r_at_virtin_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_snotel/virgin_r_at_virtin_time_series_plot.png" width="700"/>
 
 Figure 8. Forecasts for tests years for site `virgin_r_at_virtin` using SNOTEL stations
 based model (aggregation days: 40, kernel model - `QuantileRegressor`)
@@ -169,7 +169,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 
 Combination of USGS streamflow -based model prediction and SNOTEL -based prediction
 
-![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_simple_ensemble/hungry_horse_reservoir_inflow_time_series_plot.png" width="700"/>
 
 Figure 9. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble
 
@@ -183,7 +183,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 - **Quantile loss metric**: 165.20
 - **Quantile loss metric (only for 0.5 quantile)**: 240.41
 
-![hungry_horse_reservoir_inflow_time_series_plot.png](examples%2Fplots%2Fpredictions_simple_ensemble_smoothing%2Fhungry_horse_reservoir_inflow_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_simple_ensemble_smoothing/hungry_horse_reservoir_inflow_time_series_plot.png" width="700"/>
 
 Figure 10. Forecasts for tests years for site `hungry_horse_reservoir_inflow` using simple ensemble with smoothing
 
@@ -214,11 +214,11 @@ Data preprocessing for SNODAS is divided into two steps:
 1. **Archive unpacking**: Archives with `.dat` and `.txt` files are transformed into geotiff files
 2. **Data extraction**: For each site id and for each datetime stamp, information is extracted and written as a `.csv` file
 
-![snow_accumulation.gif](docs%2Fimages%2Fsnow_accumulation.gif)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/docs/images/snow_accumulation.gif" width="600"/>
 
 Animation 1. Snow accumulation per days for site `hungry_horse_reservoir_inflow`. Units: `Kilograms per square meter / 10`
 
-![animas_r_at_durango_time_series_plot.png](examples%2Fplots%2Fpredictions_snodas%2Fanimas_r_at_durango_time_series_plot.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/predictions_snodas/animas_r_at_durango_time_series_plot.png" width="700"/>
 
 Figure 11. Forecasts for tests years for site `animas_r_at_durango` using SNODAS-based model (aggregation days: 120, kernel model - `QuantileRegressor`)
 
@@ -251,7 +251,7 @@ Validation years: `2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023`
 Since SNODAS and SNOTEL data are compatible in the terms of feature engineering is was decided to use only SNOTEL 
 data because it is much easier to process (Figure 12)
 
-![pueblo_reservoir_inflow_ts_mean_Modeled snow water equivalent, total of snow layers.png](examples%2Fplots%2Fsnodas_investigation%2Fpueblo_reservoir_inflow_ts_mean_Modeled%20snow%20water%20equivalent%2C%20total%20of%20snow%20layers.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/snodas_investigation/pueblo_reservoir_inflow_ts_mean_Modeled%20snow%20water%20equivalent%2C%20total%20of%20snow%20layers.png" width="700"/>
 
 Figure 12. SNODAS and SNOTEL data comparison vs target for site `pueblo_reservoir_inflow`
 
@@ -273,12 +273,12 @@ To find the optimal configuration of hyperparameters (`days SNOTEL short`, `days
 was applied. The figures below show the results of 
 calculations for two loss functions: Quantile loss and MAE (Figure 13 and Figure 14)
 
-![22_mae_virgin_r_at_virtin.png](docs%2Fimages%2F22_mae_virgin_r_at_virtin.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/docs/images/22_mae_virgin_r_at_virtin.png" width="600"/>
 
 Figure 13. Exploration of MAE landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
 Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=148, `days PDSI`=124)
 
-![22_quantile_virgin_r_at_virtin.png](docs%2Fimages%2F22_quantile_virgin_r_at_virtin.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/docs/images/22_quantile_virgin_r_at_virtin.png" width="600"/>
 
 Figure 14. Exploration of Quantile loss landscape for common model for `virgin_r_at_virtin` site with constant `days SNOTEL short`=22 parameter.
 Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=108, `days PDSI`=92)
@@ -287,6 +287,6 @@ Optimal configuration for this site: `days SNOTEL short`=22, `days SNOTEL long`=
 
 The results of applying all the approaches are shown below
 
-![compare_approaches.png](examples%2Fplots%2Fcompare_approaches.png)
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/compare_approaches.png" width="600"/>
 
 Figure 15. Average mean Quantile loss for implemented models on validation sample
