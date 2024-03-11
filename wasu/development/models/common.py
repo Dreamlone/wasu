@@ -1,29 +1,23 @@
 import datetime
 import pickle
 from pathlib import Path
-from typing import Union, List
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
 from loguru import logger
 from matplotlib import pyplot as plt
-from pandas import Timestamp
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import QuantileRegressor, Ridge
 from sklearn.metrics import mean_absolute_error
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
 from wasu.development.data.pdsi import collect_pdsi_data_for_site
-from wasu.development.data.snodas import collect_snodas_data_for_site
 from wasu.development.data.snotel import collect_snotel_data_for_site
-from wasu.development.data.teleconnections import collect_telecon_data_for_site
 from wasu.development.models.create import ModelsCreator
 from wasu.development.models.date_utils import generate_datetime_into_julian, get_julian_date_from_datetime
-from wasu.development.models.snotel import SnotelFlowRegression
 from wasu.development.models.train_model import TrainModel
-from wasu.development.validation import smape
 from wasu.development.vis.visualization import created_spatial_plot
 
 
@@ -89,9 +83,9 @@ def _aggregate_features_soi(agg_soi: pd.DataFrame):
 
 def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe, aggregation_days,
                                   target_value: Union[float, None], label: str) -> Union[pd.DataFrame, None]:
-    aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date, offset_days=1)
+    aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date)
     aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date,
-                                                             offset_days=aggregation_days + 1)
+                                                             offset_days=aggregation_days)
 
     aggregated = dataframe[dataframe['julian_datetime'] >= aggregation_start_julian]
     aggregated = aggregated[aggregated['julian_datetime'] < aggregation_end_julian]

@@ -164,6 +164,7 @@ labels = submission_format.merge(
     right_on=["site_id", "year"],
     how="left",
 ).set_index(INDEX)
+full_train_df = pd.read_csv(Path('../../data/train.csv'), parse_dates=['year'])
 
 #### CROSS-VALIDATION ####
 
@@ -190,10 +191,14 @@ for train_indices, test_indices in logo.split(labels.volume.values, groups=label
     train_labels = train_labels.reset_index()
     test_labels = test_labels.reset_index()
     for site_id in test_labels['site_id'].unique():
-        train_site_df = train_labels[train_labels['site_id'] == site_id]
-        train_site_df['year'] = pd.to_datetime(train_site_df['year'], format='%Y')
         test_site_df = test_labels[test_labels['site_id'] == site_id]
         test_site_df['year'] = pd.to_datetime(test_site_df['year'], format='%Y')
+
+        full_train_site_df = full_train_df[full_train_df['site_id'] == site_id]
+        full_train_site_df = full_train_site_df.dropna()
+        history_site_df = full_train_site_df[full_train_site_df['year'] < test_site_df['year'].values[0]]
+        post_history_site_df = full_train_site_df[full_train_site_df['year'] > test_site_df['year'].values[0]]
+        train_site_df = pd.concat([history_site_df, post_history_site_df])
 
         # Fit the model and save the results into folder
         aggregation_days_snotel_short = PARAMETERS_BY_SITE[site_id]['SNOTEL short days']
