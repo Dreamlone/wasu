@@ -89,9 +89,9 @@ def _aggregate_features_soi(agg_soi: pd.DataFrame):
 
 def aggregate_data_for_issue_date(issue_date, day_of_year, dataframe, aggregation_days,
                                   target_value: Union[float, None], label: str) -> Union[pd.DataFrame, None]:
-    aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date)
+    aggregation_end_julian = get_julian_date_from_datetime(current_date=issue_date, offset_days=1)
     aggregation_start_julian = get_julian_date_from_datetime(current_date=issue_date,
-                                                             offset_days=aggregation_days)
+                                                             offset_days=aggregation_days + 1)
 
     aggregated = dataframe[dataframe['julian_datetime'] >= aggregation_start_julian]
     aggregated = aggregated[aggregated['julian_datetime'] < aggregation_end_julian]
@@ -245,12 +245,12 @@ class CommonRegression(TrainModel):
             plt.legend()
             plt.show()
 
-    def fit(self, submission_format: pd.DataFrame, **kwargs) -> Union[str, Path]:
+    def fit(self, submission_format: pd.DataFrame, site_id: str = None, **kwargs) -> Union[str, Path]:
         """ Fit new model based on snotel """
         metadata, path_to_snodas, path_to_snotel, path_to_pdsi = self.load_data_from_kwargs(kwargs)
 
         for site in list(submission_format['site_id'].unique()):
-            logger.info(f'Train SNOTEL {self.name} model for site: {site}')
+            logger.info(f'Train Common {self.name} model for site: {site}')
             pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site)
             # telecon_df = collect_telecon_data_for_site(path_to_teleconnections, site)
             snodas_df = pd.DataFrame()
@@ -259,6 +259,19 @@ class CommonRegression(TrainModel):
             site_df = self.train_df[self.train_df['site_id'] == site]
             site_df = site_df.sort_values(by='year')
             self.fit_main_model(site, snodas_df, snotel_df, pdsi_df, site_df)
+
+        return self.model_folder
+
+    def fit_model_for_site(self, site_id: str, **kwargs):
+        metadata, path_to_snodas, path_to_snotel, path_to_pdsi = self.load_data_from_kwargs(kwargs)
+        pdsi_df = collect_pdsi_data_for_site(path_to_pdsi, site_id)
+        snodas_df = pd.DataFrame()
+        snotel_df = collect_snotel_data_for_site(path_to_snotel, site_id)
+
+        site_df = self.train_df[self.train_df['site_id'] == site_id]
+        site_df = site_df.sort_values(by='year')
+
+        self.fit_main_model(site_id, snodas_df, snotel_df, pdsi_df, site_df)
 
         return self.model_folder
 

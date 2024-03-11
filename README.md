@@ -45,7 +45,8 @@ It is recommended to start exploration with [examples](./examples) folder:
 - [8_teleconnections](./examples/8_teleconnections) - teleconnections with snotel data;
 - [9_common_ver_1](./examples/9_common_ver_1) - complex model which use SNOTEL, PDSI and Climate indices data to generate predictions - **Model on Hindcast Stage**;
 - [9_common_ver_2](./examples/9_common_ver_2) - complex model which use SNOTEL and PDSI data to generate predictions;
-- [10_common_experiment](./examples/10_common_experiment) - set of functions to provide hyperparameters search space exploration for common model - **Model on Forecast Stage**. 
+- [10_common_experiment](./examples/10_common_experiment) - set of functions to provide hyperparameters search space exploration for common model - **Model on Forecast Stage**; 
+- [11_cross_validation_final_model](./examples/11_cross_validation_final_model) - code for cross validation of the final submission execution - **Final Prize Stage** 
 
 In the folders with submit prefix placed the code for execution stage (including serialized models).
 
