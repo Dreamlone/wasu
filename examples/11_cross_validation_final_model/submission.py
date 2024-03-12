@@ -238,4 +238,4 @@ model = CommonRegression(train_df=labels, method='linear', aggregation_days_snot
                          aggregation_days_snotel_long=2, aggregation_days_pdsi=2)
 model.save_predictions_as_submit(predictions[['site_id', 'issue_date', 'volume_10', 'volume_50', 'volume_90']],
                                  submission_format=pd.read_csv("cross_validation_submission_format.csv"),
-                                 path='cross_validated.csv')
+                                 path='cross_validated_lg.csv')
