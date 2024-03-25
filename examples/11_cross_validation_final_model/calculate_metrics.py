@@ -34,7 +34,6 @@ def calculate_metric():
     ).set_index(INDEX)
 
     # Check particular year
-    loss_metric = get_metric(labels[labels['year'] == 2004], cross_validated[cross_validated['issue_date'].dt.year == 2004])
     loss_metric = get_metric(labels,
                              cross_validated)
     logger.info(f'Calculated loss metric: {loss_metric}')

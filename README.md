@@ -291,3 +291,12 @@ The results of applying all the approaches are shown below
 <img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/compare_approaches.png" width="600"/>
 
 Figure 15. Average mean Quantile loss for implemented models on validation sample
+
+### Cross validation of the Complex model (optimized)
+
+In the folder with cross validation [11_cross_validation_final_model](./examples/11_cross_validation_final_model) there 
+are scripts which check how the model perform during cross validation.
+
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/cross_validation_results/animas_r_at_durango.png" width="700"/>
+
+Figure 16. Comparison of the predicted and actual values obtained during model cross validation
