@@ -241,6 +241,6 @@ predictions = pd.concat(predictions)
 labels['year'] = pd.to_datetime(labels['year'], format='%Y')
 model = CommonRegression(train_df=labels, method='linear', aggregation_days_snotel_short=2,
                          aggregation_days_snotel_long=2, aggregation_days_pdsi=2)
-model.save_predictions_as_submit(predictions[['site_id', 'issue_date', 'volume_10', 'volume_50', 'volume_90']],
+model.save_predictions_as_submit(predictions[['site_id', 'issue_date', 'volume_10', 'volume_50', 'volume_90', 'execution_time']],
                                  submission_format=pd.read_csv("cross_validation_submission_format.csv"),
-                                 path='cross_validated_lg.csv')
+                                 path='cross_validated.csv', ignore_errors=True)
