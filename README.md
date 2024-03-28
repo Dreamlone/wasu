@@ -303,4 +303,4 @@ Figure 16. Comparison of the predicted and actual values obtained during model c
 
 <img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/cross_validation_results/cross_validation_map.png" width="700"/>
 
-Figure 17. Cross validation metrics map
+Figure 17. Cross validation results map with Averaged Mean Quantile Loss (left) and Lead time, seconds (right) per site
