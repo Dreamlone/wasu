@@ -52,6 +52,7 @@ def calculate_metric():
         test_site_df = test_site_df.sort_values(by='issue_date')
         actual_site_df = actual_site_df.sort_values(by='issue_date')
 
+        execution_time = test_site_df['execution_time'].mean()
         loss_metric = get_metric(actual_site_df, test_site_df)
 
         fig_size = (17.0, 6.0)
@@ -66,22 +67,28 @@ def calculate_metric():
         plt.savefig(Path(plots_folder, f'{site_id}.png'))
         plt.close()
 
-        dataframe.append([site_id, loss_metric])
+        dataframe.append([site_id, loss_metric, execution_time])
 
-    dataframe = pd.DataFrame(dataframe, columns=['site_id', 'Averaged Mean Quantile Loss'])
+    dataframe = pd.DataFrame(dataframe, columns=['site_id', 'Averaged Mean Quantile Loss', 'Lead time, seconds'])
     dataframe = dataframe.sort_values(by='site_id')
     spatial_objects = geopandas.read_file(Path('../../data/geospatial.gpkg'))
     spatial_objects = spatial_objects.sort_values(by='site_id')
     spatial_objects['Averaged Mean Quantile Loss'] = dataframe['Averaged Mean Quantile Loss']
+    spatial_objects['Lead time, seconds'] = dataframe['Lead time, seconds']
 
-    fig_size = (10.0, 7.0)
-    fig, ax = plt.subplots(figsize=fig_size)
-    ax = spatial_objects.plot(ax=ax, column='Averaged Mean Quantile Loss', alpha=1.0, legend=True,
+    fig_size = (18.0, 7.0)
+    fig, axs = plt.subplots(1, 2, figsize=fig_size)
+    ax = spatial_objects.plot(ax=axs[0], column='Averaged Mean Quantile Loss', alpha=1.0, legend=True,
                               zorder=1, cmap='Reds', edgecolor='black',
                               legend_kwds={'label': "Averaged Mean Quantile Loss"})
     cx.add_basemap(ax, crs=spatial_objects.crs.to_string(),
                    source=cx.providers.CartoDB.Voyager)
-
+    ax = spatial_objects.plot(ax=axs[1], column='Lead time, seconds',
+                              alpha=1.0, legend=True,
+                              zorder=1, cmap='Blues', edgecolor='black',
+                              legend_kwds={'label': "Lead time, seconds"})
+    cx.add_basemap(ax, crs=spatial_objects.crs.to_string(),
+                   source=cx.providers.CartoDB.Voyager)
     plt.savefig(Path(plots_folder, f'cross_validation_map.png'), dpi=350)
     plt.close()
 
