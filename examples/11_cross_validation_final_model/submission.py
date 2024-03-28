@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from sklearn.model_selection import LeaveOneGroupOut
-
+import datetime
 import warnings
 
 from wasu.metrics import compute_quantile_loss
@@ -204,6 +204,8 @@ for train_indices, test_indices in logo.split(labels.volume.values, groups=label
         aggregation_days_snotel_short = PARAMETERS_BY_SITE[site_id]['SNOTEL short days']
         aggregation_days_snotel_long = PARAMETERS_BY_SITE[site_id]['SNOTEL long days']
         aggregation_days_pdsi = PARAMETERS_BY_SITE[site_id]['PDSI days']
+
+        starting_time = datetime.datetime.now()
         model = CommonRegression(train_df=train_site_df, method='linear',
                                  aggregation_days_snotel_short=aggregation_days_snotel_short,
                                  aggregation_days_snotel_long=aggregation_days_snotel_long,
@@ -214,6 +216,8 @@ for train_indices, test_indices in logo.split(labels.volume.values, groups=label
                                               path_to_snotel=PATH_TO_SNOTEL_DATA,
                                               path_to_snodas=PATH_TO_SNODAS_DATA,
                                               path_to_pdsi=PATH_TO_PDSI, vis=False)
+        spend_time = datetime.datetime.now() - starting_time
+        time = spend_time.total_seconds()
 
         # Launch the prediction for test year
         predicted = model.predict(test_site_df, metadata=metadata, path_to_snotel=PATH_TO_SNOTEL_DATA,
@@ -229,6 +233,7 @@ for train_indices, test_indices in logo.split(labels.volume.values, groups=label
         loss_metric = (metric_low + metric_mean + metric_high) / 3
         logger.info(f'Calculated loss metric: {loss_metric}')
 
+        predicted['execution_time'] = time
         predictions.append(predicted)
 
 # Save results as csv file

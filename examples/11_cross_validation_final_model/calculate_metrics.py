@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from loguru import logger
+import contextily as cx
+import geopandas
 from matplotlib import pyplot as plt
 
 from wasu.development.paths import path_to_plots_folder
@@ -43,6 +45,7 @@ def calculate_metric():
     plots_folder = Path(path_to_plots_folder(), 'cross_validation_results')
     plots_folder.mkdir(exist_ok=True, parents=True)
 
+    dataframe = []
     for site_id in cross_validated['site_id'].unique():
         test_site_df = cross_validated[cross_validated['site_id'] == site_id]
         actual_site_df = labels[labels['site_id'] == site_id]
@@ -62,6 +65,25 @@ def calculate_metric():
         plt.legend()
         plt.savefig(Path(plots_folder, f'{site_id}.png'))
         plt.close()
+
+        dataframe.append([site_id, loss_metric])
+
+    dataframe = pd.DataFrame(dataframe, columns=['site_id', 'Averaged Mean Quantile Loss'])
+    dataframe = dataframe.sort_values(by='site_id')
+    spatial_objects = geopandas.read_file(Path('../../data/geospatial.gpkg'))
+    spatial_objects = spatial_objects.sort_values(by='site_id')
+    spatial_objects['Averaged Mean Quantile Loss'] = dataframe['Averaged Mean Quantile Loss']
+
+    fig_size = (10.0, 7.0)
+    fig, ax = plt.subplots(figsize=fig_size)
+    ax = spatial_objects.plot(ax=ax, column='Averaged Mean Quantile Loss', alpha=1.0, legend=True,
+                              zorder=1, cmap='Reds', edgecolor='black',
+                              legend_kwds={'label': "Averaged Mean Quantile Loss"})
+    cx.add_basemap(ax, crs=spatial_objects.crs.to_string(),
+                   source=cx.providers.CartoDB.Voyager)
+
+    plt.savefig(Path(plots_folder, f'cross_validation_map.png'), dpi=350)
+    plt.close()
 
 
 if __name__ == '__main__':

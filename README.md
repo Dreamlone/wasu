@@ -300,3 +300,7 @@ are scripts which check how the model perform during cross validation.
 <img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/cross_validation_results/animas_r_at_durango.png" width="700"/>
 
 Figure 16. Comparison of the predicted and actual values obtained during model cross validation
+
+<img src="https://raw.githubusercontent.com/dreamlone/wasu/main/examples/plots/cross_validation_results/cross_validation_map.png" width="700"/>
+
+Figure 17. Cross validation metrics map
